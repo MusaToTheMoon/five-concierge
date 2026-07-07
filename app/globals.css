@@ -1,26 +1,106 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+ * FIVE Concierge design tokens.
+ * Direction: modern luxury meets editorial nightlife — warm near-black
+ * layers, a single champagne-gold accent, ivory type.
+ */
+@theme {
+  /* Palette */
+  --color-night: #0b0906; /* page base — warm near-black */
+  --color-charcoal: #151009; /* raised surface */
+  --color-onyx: #201810; /* elevated surface / hover */
+  --color-gold: #c9a25d; /* the one accent */
+  --color-gold-bright: #e3c88a; /* hover / highlights */
+  --color-gold-deep: #8a6d35; /* borders, subdued accent */
+  --color-ivory: #f2ecdf; /* primary text */
+  --color-sand: #a89c86; /* secondary text */
+  --color-ember: #d98a5f; /* error / warning tint, kept warm */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Type */
+  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-manrope);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  /* Motion */
+  --animate-rise: rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-rise-slow: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-glow-drift: glow-drift 14s ease-in-out infinite alternate;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes glow-drift {
+    from {
+      transform: translate(-8%, -4%) scale(1);
+    }
+    to {
+      transform: translate(8%, 6%) scale(1.15);
+    }
   }
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-night);
+  color: var(--color-ivory);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background-color: var(--color-gold);
+  color: var(--color-night);
+}
+
+/* Slim warm scrollbars (WebKit) so long chats stay elegant */
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--color-gold) 25%, transparent);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Typing indicator — three dots breathing in sequence */
+.typing-dot {
+  animation: typing-breathe 1.2s ease-in-out infinite;
+}
+.typing-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.typing-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes typing-breathe {
+  0%,
+  60%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+/* Hairline utility — the gold rule used across the app */
+.hairline {
+  border-color: color-mix(in srgb, var(--color-gold) 18%, transparent);
 }
