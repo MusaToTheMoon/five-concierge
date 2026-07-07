@@ -1,0 +1,89 @@
+import { NextResponse } from "next/server";
+import { handleGeminiError } from "@/lib/api-errors";
+import { CHAT_MODEL, getGemini } from "@/lib/gemini";
+import { formatContext, retrieve, toSources } from "@/lib/retrieval";
+import type { ChatMessage } from "@/lib/types";
+
+/** Gemini can be slow on cold starts; allow headroom beyond Vercel's default. */
+export const maxDuration = 60;
+
+/** Turns of history forwarded to the model (the client sends everything). */
+const HISTORY_LIMIT = 10;
+
+const SYSTEM_PROMPT = `You are the FIVE Concierge, the AI guest concierge for FIVE Hotels and Resorts — the luxury lifestyle group behind FIVE Palm Jumeirah, FIVE LUXE JBR and FIVE Jumeirah Village in Dubai, FIVE Zurich, and Destino FIVE Ibiza and Pacha Hotel Ibiza.
+
+Voice: polished, warm and effortlessly glamorous — a knowing insider, never stiff, never gushing. Keep answers tight: two or three short paragraphs, or a brief hyphen list when comparing options.
+
+Hard rules, in priority order:
+1. Ground every factual claim in the CONTEXT block provided with the question. It is your only source of truth.
+2. If the CONTEXT does not contain the answer, say so plainly and point the guest to fivehotelsandresorts.com or the property team. Never guess or fill gaps from general knowledge.
+3. Never state, estimate or imply prices, room rates, availability, opening hours or dates that are not in CONTEXT, and never claim a booking has been made or can be made here. Direct booking requests to the official site.
+4. Never invent venues, events, perks or policies.
+5. Write plain conversational text — no markdown headings, no asterisks, no emoji. Hyphen lists are fine.
+6. If asked about something unrelated to FIVE, its destinations or a guest's stay, politely steer back to what you can help with.`;
+
+/** Friendly fallback when retrieval finds nothing on-topic. */
+const NO_INFO_REPLY =
+  "That's not something I have reliable information on, I'm afraid — and I'd rather not guess. For the definitive answer, check fivehotelsandresorts.com or reach out to the property team directly; they'll take care of you.";
+
+export async function POST(request: Request) {
+  let messages: ChatMessage[];
+  try {
+    const body = await request.json();
+    messages = body?.messages;
+    if (!Array.isArray(messages) || messages.length === 0) throw new Error();
+  } catch {
+    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  }
+
+  const history = messages.slice(-HISTORY_LIMIT);
+  const last = history[history.length - 1];
+  if (last?.role !== "user" || typeof last.content !== "string") {
+    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  }
+
+  try {
+    // Short follow-ups ("what about Zurich?") retrieve badly on their own,
+    // so fold in the previous user turn for context.
+    const userTurns = history.filter((m) => m.role === "user");
+    const previous = userTurns[userTurns.length - 2];
+    const query =
+      last.content.length < 80 && previous
+        ? `${previous.content}\n${last.content}`
+        : last.content;
+
+    const chunks = await retrieve(query);
+    if (chunks.length === 0) {
+      return NextResponse.json({ reply: NO_INFO_REPLY, sources: [] });
+    }
+
+    const contents = history.map((message, i) => ({
+      role: message.role === "assistant" ? ("model" as const) : ("user" as const),
+      parts: [
+        {
+          text:
+            i === history.length - 1
+              ? `CONTEXT:\n${formatContext(chunks)}\n\nGUEST QUESTION: ${message.content}`
+              : message.content,
+        },
+      ],
+    }));
+
+    const response = await getGemini().models.generateContent({
+      model: CHAT_MODEL,
+      contents,
+      config: {
+        systemInstruction: SYSTEM_PROMPT,
+        temperature: 0.6,
+        // Skip thinking — concierge answers need latency, not deliberation.
+        thinkingConfig: { thinkingBudget: 0 },
+      },
+    });
+
+    const reply = response.text?.trim();
+    if (!reply) throw new Error("Empty model response");
+    return NextResponse.json({ reply, sources: toSources(chunks) });
+  } catch (error) {
+    return handleGeminiError(error);
+  }
+}
