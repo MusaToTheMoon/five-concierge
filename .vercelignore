@@ -1,0 +1,8 @@
+# Keep the CLI upload lean. NOTE: data/embeddings.json is gitignored but must
+# ship with the deploy — the negation below lets it through.
+.git
+node_modules
+.next
+.env*
+!.env.example
+!data/embeddings.json
