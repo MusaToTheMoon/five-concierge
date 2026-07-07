@@ -164,7 +164,7 @@ export default function Chat() {
               }
             }}
             rows={1}
-            placeholder="Ask about the hotels, dining, nightlife, spa…"
+            placeholder="Ask the concierge anything…"
             aria-label="Message the concierge"
             className="max-h-32 min-h-[2.5rem] flex-1 resize-none bg-transparent px-3 py-2 text-sm text-ivory placeholder:text-sand/60 focus:outline-none"
           />
