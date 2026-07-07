@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Chat from "@/components/Chat";
+import PlanMyNight from "@/components/PlanMyNight";
 
 type Tab = "concierge" | "night";
 
@@ -46,9 +48,12 @@ export default function Home() {
         </TabButton>
       </div>
 
-      {/* Active experience */}
+      {/* Active experience — keep Chat mounted so the thread survives tab hops */}
       <div className="flex flex-1 flex-col pt-6 pb-10">
-        {tab === "concierge" ? <PlaceholderPanel /> : <PlaceholderPanel />}
+        <div className={tab === "concierge" ? "flex flex-1 flex-col" : "hidden"}>
+          <Chat />
+        </div>
+        {tab === "night" && <PlanMyNight />}
       </div>
     </div>
   );
@@ -76,13 +81,5 @@ function TabButton({
     >
       {children}
     </button>
-  );
-}
-
-function PlaceholderPanel() {
-  return (
-    <div className="hairline flex flex-1 items-center justify-center rounded-2xl border bg-charcoal/40 p-10">
-      <p className="text-sm text-sand">Coming together…</p>
-    </div>
   );
 }
