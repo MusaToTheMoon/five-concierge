@@ -14,7 +14,9 @@ brand line is "Elevating Luxury, Redefining Entertainment". The nightlife map:
 The Penthouse at FIVE Palm Jumeirah is the rooftop lounge and nightclub that
 DJ Mag ranked the number one club in the Middle East, pairing Japanese-fusion
 dining with late-night DJs above the Palm. Bohemia is the beach-club series at
-FIVE Palm Jumeirah with international DJs on the sand. At FIVE Jumeirah
+FIVE Palm Jumeirah with international DJs on the sand, and BLING covers the
+urban side — Afrobeat and hip-hop in Dubai's supercar-friendly nightclub — while
+The Social Pool parties through the daytime. At FIVE Jumeirah
 Village, The Mansion hosts club nights and cabaret (including ToyRoom Cabaret
 on Saturdays), Mimi's Pool Club runs art-deco pool parties, Urban Beats takes
 over on Fridays and the SoulCaliCool Pool Party Brunch fills Saturday
@@ -32,7 +34,9 @@ Ibiza nightclub — the island's most iconic club since 1973, under the cherry
 logo — plus Pacha ICONS open-air daytime events at Destino FIVE Ibiza's
 cherry-shaped pool. Guests of Destino FIVE Ibiza get free entry to Pacha
 Ibiza, and Pacha Hotel Ibiza guests use a dedicated VIP entrance directly
-opposite the club.
+opposite the club. Lío at Marina Ibiza adds the Pacha Group's
+cabaret-restaurant-club — dinner, show and DJs until late with Dalt Vila
+across the water.
 
 ## Zurich
 

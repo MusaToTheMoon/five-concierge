@@ -37,7 +37,8 @@ the Palm brings Arabic flavours with international influences.
 Soul St. — at FIVE Jumeirah Village and FIVE Zurich — is FIVE's gourmet
 street-food and cocktail concept. Goose Island Tap House (FIVE Jumeirah
 Village and FIVE LUXE) pairs craft beer with live sports. One for the Road at
-FIVE Jumeirah Village pours artisan coffee 24 hours a day, The Delisserie at
+FIVE Jumeirah Village pours artisan coffee 24 hours a day, The Lobby Lounge
+at FIVE LUXE serves artisan coffee and fresh pastries, The Delisserie at
 the Palm handles pastries and casual bites, and Detox Me Café covers
 health-focused, gluten-free, keto and vegan menus.
 
