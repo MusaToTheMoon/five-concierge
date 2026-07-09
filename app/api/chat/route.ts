@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Type } from "@google/genai";
 import { handleGeminiError } from "@/lib/api-errors";
 import { CHAT_MODEL, getGemini } from "@/lib/gemini";
 import { formatContext, retrieve, toSources } from "@/lib/retrieval";
@@ -20,7 +21,11 @@ Hard rules, in priority order:
 3. Never state, estimate or imply prices, room rates, availability, opening hours or dates that are not in CONTEXT, and never claim a booking has been made or can be made here. Direct booking requests to the official site.
 4. Never invent venues, events, perks or policies.
 5. Write plain conversational text — no markdown headings, no asterisks, no emoji. Hyphen lists are fine.
-6. If asked about something unrelated to FIVE, its destinations or a guest's stay, politely steer back to what you can help with.`;
+6. If asked about something unrelated to FIVE, its destinations or a guest's stay, politely steer back to what you can help with.
+
+Return JSON with two fields:
+- "reply": your answer, following every rule above.
+- "grounded": true ONLY when the reply's main purpose is to give the guest substantive FIVE information they asked for (details about the hotels, dining, nightlife, spa, and so on). Set it to false whenever the reply's main purpose is to decline, to redirect the guest to the website or property team, to refuse prices or bookings, or to steer an off-topic question back — even if that reply happens to mention a property or venue name. A refusal or redirect is never grounded.`;
 
 /** Friendly fallback when retrieval finds nothing on-topic. */
 const NO_INFO_REPLY =
@@ -77,12 +82,31 @@ export async function POST(request: Request) {
         temperature: 0.6,
         // Skip thinking — concierge answers need latency, not deliberation.
         thinkingConfig: { thinkingBudget: 0 },
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            reply: { type: Type.STRING },
+            grounded: { type: Type.BOOLEAN },
+          },
+          required: ["reply", "grounded"],
+          propertyOrdering: ["reply", "grounded"],
+        },
       },
     });
 
-    const reply = response.text?.trim();
+    const parsed = JSON.parse(response.text ?? "") as {
+      reply: string;
+      grounded: boolean;
+    };
+    const reply = parsed.reply?.trim();
     if (!reply) throw new Error("Empty model response");
-    return NextResponse.json({ reply, sources: toSources(chunks) });
+    // Only cite sources when the model actually answered from them — a refusal
+    // or off-topic steer shouldn't carry source chips.
+    return NextResponse.json({
+      reply,
+      sources: parsed.grounded ? toSources(chunks) : [],
+    });
   } catch (error) {
     return handleGeminiError(error);
   }
