@@ -17,11 +17,11 @@ const SYSTEM_PROMPT = `You are the FIVE Concierge, curating one perfect evening 
 Hard rules:
 1. Use ONLY venues, properties and facts that appear in the CONTEXT block. Never invent a venue, event or perk.
 2. Every stop must reference the context chunk it came from via source_index (the [n] labels).
-3. 3 to 5 stops, in chronological order through the evening, with realistic flow (aperitivo → dinner → night). Use indicative times like "7:30 PM" — do not promise opening hours, since CONTEXT does not include them.
+3. 3 to 5 stops, in chronological order through the evening, with realistic flow (aperitivo, then dinner, then night). Use indicative times like "7:30 PM", but do not promise opening hours, since CONTEXT does not include them.
 4. Keep all stops in the guest's chosen destination city.
 5. Match the vibe and group: romantic means intimate venues and sunset moments, party means pool clubs and dancefloors, relaxed means spa/pool/casual dining, chic dinner centres on the strongest restaurant.
 6. Never mention prices, rates or availability. No booking promises.
-7. Blurbs: max two sentences, evocative and editorial — written for an Instagram caption, not a brochure. No emoji, no hashtags.
+7. Blurbs: max two sentences, evocative and editorial, written for an Instagram caption, not a brochure. No emoji, no hashtags, and never use em dashes or en dashes.
 8. title: a short evocative name for the night (max 6 words). subtitle: one line setting the scene.`;
 
 const RESPONSE_SCHEMA = {
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
     const chunks = await gatherContext(prefs);
     if (chunks.length === 0) {
       return NextResponse.json(
-        { error: "I couldn't find grounded venues for that combination — try different preferences." },
+        { error: "I couldn't find grounded venues for that combination. Try different preferences." },
         { status: 422 },
       );
     }

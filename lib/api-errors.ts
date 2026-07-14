@@ -14,7 +14,7 @@ export function handleGeminiError(error: unknown): NextResponse {
   }
   if (/GEMINI_API_KEY|embeddings\.json/.test(message)) {
     return NextResponse.json(
-      { error: "The concierge isn't configured yet — see the README." },
+      { error: "The concierge isn't configured yet. See the README." },
       { status: 500 },
     );
   }
