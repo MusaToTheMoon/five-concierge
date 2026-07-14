@@ -7,10 +7,10 @@ import type { ChatMessage } from "@/lib/types";
 const STORAGE_KEY = "five-concierge-chat-v1";
 
 const SUGGESTED_PROMPTS = [
-  "Where should we party in Dubai this weekend?",
+  "Dinner and a dancefloor in Dubai this Saturday?",
   "Which FIVE restaurants are in the Michelin Guide?",
-  "What's the Pacha connection in Ibiza?",
-  "I need a spa day — what are my options?",
+  "What's the Pacha story at FIVE Ibiza?",
+  "Plan me a low-key spa day",
 ];
 
 /** Grounded concierge chat with localStorage persistence. */
@@ -151,7 +151,7 @@ export default function Chat() {
             e.preventDefault();
             send(input);
           }}
-          className="hairline flex items-end gap-2 rounded-2xl border bg-charcoal/90 p-2 backdrop-blur-md transition-colors focus-within:border-gold/40"
+          className="flex items-end gap-2 rounded-2xl border border-gold/30 bg-charcoal/90 p-2 backdrop-blur-md transition-colors focus-within:border-gold/60"
         >
           <textarea
             ref={inputRef}
@@ -171,7 +171,7 @@ export default function Chat() {
           <button
             type="submit"
             disabled={!input.trim() || isLoading}
-            className="rounded-xl bg-gold px-4 py-2.5 text-xs font-bold uppercase tracking-[0.15em] text-night transition-all hover:bg-gold-bright disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-xl bg-gold px-4 py-2.5 text-xs font-bold uppercase tracking-[0.15em] text-ink transition-all hover:bg-gold-bright disabled:cursor-not-allowed disabled:opacity-40"
           >
             Send
           </button>
@@ -234,8 +234,9 @@ function EmptyState({ onPick }: { onPick: (prompt: string) => void }) {
           {greeting}.
         </p>
         <p className="mt-2 max-w-md text-sm leading-relaxed text-sand">
-          I know FIVE&apos;s hotels, tables, dancefloors and spas by heart —
-          and I&apos;ll always show you where the answer came from.
+          Ask me about a table, a pool party, a treatment or a suite. I only
+          speak from FIVE&apos;s own pages, and I&apos;ll always show you the
+          exact one each answer came from.
         </p>
       </div>
       <div className="flex flex-wrap gap-2">

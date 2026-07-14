@@ -18,16 +18,17 @@ export default function Home() {
       {/* Hero */}
       <section className="animate-rise-slow pt-10 pb-8 sm:pt-14">
         <p className="text-[0.65rem] font-semibold uppercase tracking-[0.4em] text-gold">
-          AI Guest Concierge
+          Your insider at FIVE
         </p>
         <h1 className="mt-3 font-display text-4xl font-light leading-[1.05] text-ivory sm:text-6xl">
-          Your night,
-          <span className="font-medium italic text-gold-bright"> curated.</span>
+          Dinner, the dancefloor, and the
+          <span className="font-medium italic text-gold-bright"> spa that fixes it.</span>
         </h1>
         <p className="mt-4 max-w-xl text-sm leading-relaxed text-sand sm:text-base">
-          Ask anything about FIVE&apos;s hotels, dining, nightlife and spas —
-          answers are grounded in FIVE&apos;s own pages, with sources. Or let
-          the concierge plan your whole evening.
+          Ask about the restaurants, the pool parties, the treatments, the
+          suites. Every answer links straight to the FIVE page it came from,
+          and it will never invent a price or a booking. Or tap Plan My Night
+          and get a full evening mapped across FIVE&apos;s venues.
         </p>
       </section>
 
