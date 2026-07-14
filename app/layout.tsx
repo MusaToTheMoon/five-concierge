@@ -6,7 +6,7 @@ import Footer from "@/components/Footer";
 
 /*
  * Type pairing: Fraunces (editorial display serif, optical sizing on) against
- * Manrope (refined grotesque) for body and UI. High contrast on purpose —
+ * Manrope (refined grotesque) for body and UI. High contrast on purpose:
  * thin oversized serif headlines, small tracked-out sans labels.
  */
 const fraunces = Fraunces({
@@ -23,12 +23,21 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   title: "FIVE Concierge",
   description:
-    "An AI concierge for FIVE Hotels and Resorts — grounded answers about the hotels, dining, nightlife and spa, plus personalised evening itineraries. Unofficial portfolio demo.",
+    "An AI concierge for FIVE Hotels and Resorts, with grounded answers about the hotels, dining, nightlife and spa, plus personalised evening itineraries. Unofficial portfolio demo.",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0b0906",
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#0b0906" },
+    { media: "(prefers-color-scheme: light)", color: "#f4f0e6" },
+  ],
 };
+
+/*
+ * Sets the stored (or OS-preferred) theme on <html> before first paint, so a
+ * returning light-mode guest never sees a dark flash. Kept tiny and inline.
+ */
+const THEME_INIT = `(function(){try{var d=document.documentElement,s=localStorage.getItem('five-theme');if(s!=='light'&&s!=='dark'){s=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}d.dataset.theme=s;}catch(e){}})();`;
 
 export default function RootLayout({
   children,
@@ -38,9 +47,13 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      // The inline theme script sets data-theme before hydration; this scopes
+      // the expected attribute mismatch to <html> only.
+      suppressHydrationWarning
       className={`${fraunces.variable} ${manrope.variable} h-full antialiased`}
     >
       <body className="relative flex min-h-dvh flex-col overflow-x-hidden">
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
         {/* Ambient gold glow, fixed behind everything */}
         <div
           aria-hidden

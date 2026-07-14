@@ -16,7 +16,7 @@ const VIBES = [
 const GROUPS = [
   { value: "solo", label: "Just me" },
   { value: "couple", label: "Two of us" },
-  { value: "small group", label: "3–5" },
+  { value: "small group", label: "3-5" },
   { value: "big group", label: "The squad" },
 ] as const;
 const INTERESTS = ["dining", "nightlife", "spa", "pool"] as const;
@@ -124,7 +124,7 @@ export default function PlanMyNight() {
         <button
           onClick={curate}
           disabled={isLoading || interests.length === 0}
-          className="mt-6 w-full rounded-xl bg-gold py-3.5 text-xs font-bold uppercase tracking-[0.25em] text-night transition-all hover:bg-gold-bright hover:shadow-[0_0_30px] hover:shadow-gold/25 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:px-10"
+          className="mt-6 w-full rounded-xl bg-gold py-3.5 text-xs font-bold uppercase tracking-[0.25em] text-ink transition-all hover:bg-gold-bright hover:shadow-[0_0_30px] hover:shadow-gold/25 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:px-10"
         >
           {isLoading ? "Curating…" : "Curate my night"}
         </button>

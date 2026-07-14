@@ -2,12 +2,14 @@
 
 /*
  * FIVE Concierge design tokens.
- * Direction: modern luxury meets editorial nightlife — warm near-black
- * layers, a single champagne-gold accent, ivory type.
+ * Direction: modern luxury meets editorial nightlife. Warm near-black
+ * layers, a single champagne-gold accent, ivory type. Dark is the default;
+ * a "warm ivory" light theme is defined below and switches every component
+ * automatically by overriding these same token names.
  */
 @theme {
-  /* Palette */
-  --color-night: #0b0906; /* page base — warm near-black */
+  /* Palette (dark theme defaults) */
+  --color-night: #0b0906; /* page base, warm near-black */
   --color-charcoal: #151009; /* raised surface */
   --color-onyx: #201810; /* elevated surface / hover */
   --color-gold: #c9a25d; /* the one accent */
@@ -16,6 +18,7 @@
   --color-ivory: #f2ecdf; /* primary text */
   --color-sand: #a89c86; /* secondary text */
   --color-ember: #d98a5f; /* error / warning tint, kept warm */
+  --color-ink: #17110a; /* constant dark ink for text on gold fills */
 
   /* Type */
   --font-display: var(--font-fraunces);
@@ -47,6 +50,44 @@
   }
 }
 
+/*
+ * Light theme: warm ivory ground, espresso ink, the same champagne gold
+ * pushed a shade deeper so it stays legible on a bright page. We override
+ * the very tokens the dark theme set above, so components need no changes.
+ * An explicit data-theme wins; the media query is the no-JS fallback.
+ */
+:root {
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --color-night: #f4f0e6;
+    --color-charcoal: #ece3d2;
+    --color-onyx: #e0d5be;
+    --color-gold: #a97f30;
+    --color-gold-bright: #855f18;
+    --color-gold-deep: #cbb489;
+    --color-ivory: #2a2019;
+    --color-sand: #6f6656;
+    --color-ember: #c2673a;
+  }
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --color-night: #f4f0e6;
+  --color-charcoal: #ece3d2;
+  --color-onyx: #e0d5be;
+  --color-gold: #a97f30;
+  --color-gold-bright: #855f18;
+  --color-gold-deep: #cbb489;
+  --color-ivory: #2a2019;
+  --color-sand: #6f6656;
+  --color-ember: #c2673a;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -61,7 +102,7 @@ body {
 
 ::selection {
   background-color: var(--color-gold);
-  color: var(--color-night);
+  color: var(--color-ink);
 }
 
 /* Slim warm scrollbars (WebKit) so long chats stay elegant */

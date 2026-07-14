@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ThemeToggle from "./ThemeToggle";
 
 /** Sticky masthead: FIVE wordmark, tracked-out "Concierge", destinations. */
 export default function Header() {
@@ -14,9 +15,12 @@ export default function Header() {
             Concierge
           </span>
         </Link>
-        <p className="hidden text-[0.65rem] font-medium uppercase tracking-[0.25em] text-sand sm:block">
-          Dubai · Zurich · Ibiza
-        </p>
+        <div className="flex items-center gap-4">
+          <p className="hidden text-[0.65rem] font-medium uppercase tracking-[0.25em] text-sand sm:block">
+            Dubai · Zurich · Ibiza
+          </p>
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   );
