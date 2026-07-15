@@ -80,7 +80,7 @@ export async function POST(request: Request) {
       config: {
         systemInstruction: SYSTEM_PROMPT,
         temperature: 0.6,
-        // Skip thinking — concierge answers need latency, not deliberation.
+        // Skip thinking: concierge answers need latency, not deliberation.
         thinkingConfig: { thinkingBudget: 0 },
         responseMimeType: "application/json",
         responseSchema: {
@@ -101,7 +101,7 @@ export async function POST(request: Request) {
     };
     const reply = parsed.reply?.trim();
     if (!reply) throw new Error("Empty model response");
-    // Only cite sources when the model actually answered from them — a refusal
+    // Only cite sources when the model actually answered from them; a refusal
     // or off-topic steer shouldn't carry source chips.
     return NextResponse.json({
       reply,

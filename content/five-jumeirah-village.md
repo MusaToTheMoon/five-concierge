@@ -17,24 +17,24 @@ pool on a glass-fronted terrace.
 Options include Superior rooms (king or double-queen), Superior Sky rooms,
 connected two-bedroom Superior layouts for groups and families, Junior Suites
 with hot tubs, Master Suites with private pools, and one-, two- and
-four-bedroom Sky Villas with private pools — up to the four-bedroom Come Play
+four-bedroom Sky Villas with private pools, up to the four-bedroom Come Play
 Suite at over 500 square metres for up to ten guests.
 
 ## Dining and bars
 
-Venues include Cinque Trattoria (authentic Italian — "Mamma's best-kept
-kitchen secrets"), Soul St. (global street food — a FIVE signature, with
+Venues include Cinque Trattoria (authentic Italian, "Mamma's best-kept
+kitchen secrets"), Soul St. (global street food, a FIVE signature, with
 Sushi Sundays), Goose Island Tap House (craft beer, pub food and live
 sports), Mimi's Pool Club (art-deco poolside dining and parties), and One for
 the Road (artisan coffee and bites, open 24/7).
 
 ## Nightlife and events
 
-The Mansion is the in-house nightclub and cabaret venue — a 1920s-inspired
+The Mansion is the in-house nightclub and cabaret venue, a 1920s-inspired
 room billed as "Dubai's wildest nightlife hotspot". The weekly calendar
 includes the SoulCaliCool Pool Party Brunch on Saturdays, ToyRoom Cabaret on
 Saturdays and Urban Beats on Fridays. Guests also get complimentary access to
-sister-property events — Bohemia Presents at FIVE Palm Jumeirah and Pure
+sister-property events: Bohemia Presents at FIVE Palm Jumeirah and Pure
 Pacha and Pacha ICONS at FIVE LUXE JBR.
 
 ## Wellness

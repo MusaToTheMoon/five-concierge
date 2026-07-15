@@ -1,5 +1,5 @@
 ---
-title: "What's On — FIVE Dubai Weekly Party Calendar"
+title: "What's On: FIVE Dubai Weekly Party Calendar"
 source_url: "https://www.fivehotelsandresorts.com/"
 category: "nightlife"
 ---
@@ -7,7 +7,7 @@ category: "nightlife"
 # The FIVE Dubai week, night by night
 
 A guide to the recurring weekly programming across FIVE's three Dubai
-properties. Line-ups rotate seasonally — always confirm dates and tickets on
+properties. Line-ups rotate seasonally; always confirm dates and tickets on
 each venue's page.
 
 ## Monday to Thursday
@@ -40,5 +40,5 @@ and Sundays at The Penthouse from 10 PM. Mimi's Pool Club at FIVE Jumeirah
 Village adds Late Night Swim and SOS events through the season.
 
 <!-- VERIFY: this calendar reflects the venues' published programmes at the
-time of writing; individual nights rotate — check venue pages before
+time of writing; individual nights rotate, so check venue pages before
 promising a specific event. -->

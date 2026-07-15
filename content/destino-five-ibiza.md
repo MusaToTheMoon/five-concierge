@@ -9,7 +9,7 @@ category: "hotel"
 Destino FIVE Ibiza is a five-star grand luxe resort on Ibiza, part of the FIVE
 Hotels and Resorts portfolio following FIVE's acquisition of The Pacha Group.
 It sits clifftop near Talamanca with sea views, and carries Pacha's cherry
-iconography throughout — most famously in its cherry-shaped pool.
+iconography throughout, most famously in its cherry-shaped pool.
 
 <!-- VERIFY: exact location wording (Cap Martinet / Talamanca area) against
 the live Destino page. -->
@@ -30,7 +30,7 @@ day-to-night DJ programming. In-room dining runs around the clock.
 
 ## Nightlife and events
 
-Destino is the home of Pacha ICONS Ibiza — "the iconic open-air experience" —
+Destino is the home of Pacha ICONS Ibiza, "the iconic open-air experience",
 with daytime poolside events featuring headline electronic artists. Hotel
 guests receive free entry to the Pacha Ibiza nightclub in town, keeping the
 resort wired directly into the island's most famous dancefloor.

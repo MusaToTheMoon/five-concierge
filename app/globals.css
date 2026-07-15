@@ -118,7 +118,7 @@ body {
   background: transparent;
 }
 
-/* Typing indicator — three dots breathing in sequence */
+/* Typing indicator: three dots breathing in sequence */
 .typing-dot {
   animation: typing-breathe 1.2s ease-in-out infinite;
 }
@@ -141,7 +141,7 @@ body {
   }
 }
 
-/* Hairline utility — the gold rule used across the app */
+/* Hairline utility: the gold rule used across the app */
 .hairline {
   border-color: color-mix(in srgb, var(--color-gold) 18%, transparent);
 }

@@ -9,13 +9,13 @@ category: "hotel"
 FIVE Zurich brings the brand's "hot luxury and lifestyle" energy to
 Switzerland, perched on the Uetliberg plateau above the city with panoramic
 views of Zurich. Styled as "Zurich's Hottest Luxury City Resort", it spans two
-buildings — "Two Buildings, One Epic Hotel" — about a ten-minute drive from
+buildings ("Two Buildings, One Epic Hotel") about a ten-minute drive from
 the city centre and two minutes' walk from public transport.
 
 ## Rooms and suites
 
 Rooms range from compact Superior rooms in the East Wing through Luxe Rooms
-(around 45–46 square metres, with or without balcony), Junior Suites and
+(around 45 to 46 square metres, with or without balcony), Junior Suites and
 Master Suites with balconies, the Come Play Suite, and a two-bedroom Royal
 Suite of up to roughly 268 square metres. Multi-bedroom connecting suites
 sleep up to ten guests for group trips.
@@ -33,7 +33,7 @@ Dubai nightlife DNA into Switzerland.
 
 ## Wellness
 
-ReFIVE Spa, The Gym and an outdoor Social Pool anchor the wellness offering —
+ReFIVE Spa, The Gym and an outdoor Social Pool anchor the wellness offering;
 the Social Pool doubles as a summer party spot.
 
 ## Recognition and sustainability

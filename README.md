@@ -1,6 +1,6 @@
 # FIVE Concierge
 
-An AI guest concierge for [FIVE Hotels and Resorts](https://www.fivehotelsandresorts.com/) —
+An AI guest concierge for [FIVE Hotels and Resorts](https://www.fivehotelsandresorts.com/),
 the luxury lifestyle group behind FIVE Palm Jumeirah, FIVE LUXE JBR and FIVE
 Jumeirah Village in Dubai, FIVE Zurich, and Destino FIVE Ibiza and Pacha Hotel
 Ibiza. It answers guest questions grounded in FIVE's own public pages (with
@@ -13,16 +13,16 @@ itineraries with the **Plan My Night** flow.
 ## How it works
 
 - **Next.js (App Router) + TypeScript + Tailwind CSS**, deployed on Vercel's
-  free tier. No database, no auth — chat history lives in the browser's
+  free tier. No database, no auth; chat history lives in the browser's
   localStorage.
 - **RAG with a file-based vector store.** `npm run ingest` chunks the markdown
   corpus in [`content/`](content/), embeds it with Gemini
   (`gemini-embedding-001`, 768 dims) and writes `data/embeddings.json`.
   At query time the API embeds the question and runs in-memory cosine
-  similarity — the corpus is tiny, so no vector DB is needed.
+  similarity; the corpus is tiny, so no vector DB is needed.
 - **Grounded answers only.** `gemini-2.5-flash` answers strictly from the
   retrieved chunks and cites the FIVE pages it used. If retrieval finds
-  nothing relevant, the concierge says so and points to the official site —
+  nothing relevant, the concierge says so and points to the official site;
   it never invents prices, availability or bookings.
 - The Gemini API key is used **only in server-side API routes** and is never
   exposed to the client.
@@ -57,7 +57,7 @@ Body text…
 ```
 
 - `source_url` is what gets cited under answers, so point it at the real page.
-- HTML comments (`<!-- VERIFY: … -->`) are stripped before embedding — they
+- HTML comments (`<!-- VERIFY: … -->`) are stripped before embedding; they
   mark facts that should be re-checked against the live site.
 - After any content change, re-run `npm run ingest` (and redeploy).
 
@@ -79,7 +79,7 @@ can't reach Gemini until you set the key on Vercel's side. Either:
   *Settings* → *Environment Variables* and add `GEMINI_API_KEY` there.
 
 Then redeploy (`vercel --prod`) so the variable takes effect. Run
-`npm run ingest` before deploying — the CLI uploads `data/embeddings.json`
+`npm run ingest` before deploying, since the CLI uploads `data/embeddings.json`
 with the build (it's allowed through in `.vercelignore`).
 
 ## Project layout
@@ -90,6 +90,6 @@ scripts/ingest.ts      # chunk → embed → data/embeddings.json
 lib/gemini.ts          # Gemini client + embedding helper (server-only)
 lib/retrieval.ts       # cosine similarity top-K + source dedupe
 app/api/chat/          # grounded chat with citations
-app/api/itinerary/     # Plan My Night — schema-constrained JSON
+app/api/itinerary/     # Plan My Night: schema-constrained JSON
 components/            # Chat, PlanMyNight, header/footer, source chips
 ```

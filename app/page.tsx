@@ -7,7 +7,7 @@ import PlanMyNight from "@/components/PlanMyNight";
 type Tab = "concierge" | "night";
 
 /**
- * Single-page shell: an editorial hero and the two experiences —
+ * Single-page shell: an editorial hero and the two experiences,
  * the grounded chat concierge and the Plan My Night itinerary builder.
  */
 export default function Home() {
@@ -49,7 +49,7 @@ export default function Home() {
         </TabButton>
       </div>
 
-      {/* Active experience — keep Chat mounted so the thread survives tab hops */}
+      {/* Active experience: keep Chat mounted so the thread survives tab hops */}
       <div className="flex flex-1 flex-col pt-6 pb-10">
         <div className={tab === "concierge" ? "flex flex-1 flex-col" : "hidden"}>
           <Chat />

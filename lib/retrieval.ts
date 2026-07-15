@@ -17,7 +17,7 @@ export interface ScoredChunk extends EmbeddedChunk {
 
 let store: EmbeddingStore | null = null;
 
-/** Loads and caches the embedding store (tiny corpus — a few hundred KB). */
+/** Loads and caches the embedding store (tiny corpus, a few hundred KB). */
 function getStore(): EmbeddingStore {
   if (!store) {
     const file = path.join(process.cwd(), "data", "embeddings.json");

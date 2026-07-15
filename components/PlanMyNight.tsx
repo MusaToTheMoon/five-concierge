@@ -16,7 +16,7 @@ const VIBES = [
 const GROUPS = [
   { value: "solo", label: "Just me" },
   { value: "couple", label: "Two of us" },
-  { value: "small group", label: "3-5" },
+  { value: "small group", label: "3 to 5" },
   { value: "big group", label: "The squad" },
 ] as const;
 const INTERESTS = ["dining", "nightlife", "spa", "pool"] as const;
@@ -37,7 +37,7 @@ export default function PlanMyNight() {
   const [error, setError] = useState<string | null>(null);
 
   // Bring back the last curated night on reload (post-mount read avoids a
-  // hydration mismatch — see Chat.tsx).
+  // hydration mismatch, see Chat.tsx).
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);

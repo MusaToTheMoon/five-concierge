@@ -1,5 +1,5 @@
 ---
-title: "Cinque Ristorante — Italian at FIVE Palm Jumeirah"
+title: "Cinque Ristorante: Italian at FIVE Palm Jumeirah"
 source_url: "https://palmjumeirah.fivehotelsandresorts.com/eat-drink/cinque/"
 category: "dining"
 ---
@@ -7,7 +7,7 @@ category: "dining"
 # Cinque Ristorante
 
 Cinque is FIVE Palm Jumeirah's Italian fine-dining flagship on Palm West
-Beach — "Dubai's award-winning Italian maverick" — serving bold Amalfi Coast
+Beach, "Dubai's award-winning Italian maverick", serving bold Amalfi Coast
 flavours in a high-energy room of hand-painted murals and brass accents, with
 terrace tables facing the Dubai Marina skyline.
 
@@ -25,9 +25,9 @@ Saturday from 8 PM) layers lounge and jazz-infused music over dinner service.
 ## Hours
 
 Monday to Wednesday 12:30 PM to midnight; Thursday to Sunday 12:30 PM to
-1 AM. Hours can change seasonally — confirm on the venue page when booking.
+1 AM. Hours can change seasonally; confirm on the venue page when booking.
 
 ## Recognition
 
-Gault & Millau (2023–2026), the MICHELIN Dubai Guide (2024–2025), Sustainable
+Gault & Millau (2023 to 2026), the MICHELIN Dubai Guide (2024 to 2025), Sustainable
 Luxury Awards 2025 and Gambero Rosso International.

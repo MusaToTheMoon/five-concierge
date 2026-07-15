@@ -14,7 +14,7 @@ and Destino FIVE Ibiza and Pacha Hotel Ibiza on Ibiza, Spain.
 
 ## How do I book a room, table or spa treatment?
 
-Book directly through the official site at fivehotelsandresorts.com — each
+Book directly through the official site at fivehotelsandresorts.com; each
 property page handles room reservations, restaurant bookings and spa
 appointments. This concierge cannot check availability, quote rates or make
 bookings; prices and availability change constantly and are only accurate on
@@ -22,7 +22,7 @@ the official booking channels.
 
 ## What is the connection between FIVE and Pacha?
 
-FIVE's parent company, FIVE Holdings, acquired The Pacha Group — including
+FIVE's parent company, FIVE Holdings, acquired The Pacha Group, including
 the iconic Pacha Ibiza nightclub, Destino and El Hotel Pacha. That is why
 Pacha concepts like Playa Pacha, Pure Pacha and Pacha ICONS appear at FIVE
 LUXE JBR in Dubai and across the Ibiza resorts, and why guests at the Ibiza
@@ -49,7 +49,7 @@ demo's sources, so the answer deliberately defers to the official site. -->
 
 The resorts host all guests, but FIVE's identity leans adult: pool parties,
 DJ programming and nightlife are central to the experience. Families should
-review each property's page to pick the right fit — quieter room categories
+review each property's page to pick the right fit; quieter room categories
 and beach areas exist, especially at the larger resorts.
 
 <!-- VERIFY: family policies (kids' clubs, age limits at pools/venues) per

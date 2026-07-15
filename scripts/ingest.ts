@@ -16,7 +16,7 @@ const OUTPUT_FILE = path.join(process.cwd(), "data", "embeddings.json");
 /** ~500 tokens at the usual ~4 chars/token for English prose. */
 const MAX_CHUNK_CHARS = 2000;
 
-/** Embedding requests per batch — small to stay friendly to free-tier limits. */
+/** Embedding requests per batch, kept small to stay friendly to free-tier limits. */
 const BATCH_SIZE = 10;
 
 /** Loads .env.local so the script works outside Next.js without extra deps. */

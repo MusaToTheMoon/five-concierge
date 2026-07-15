@@ -1,5 +1,5 @@
 ---
-title: "Dining at FIVE — Restaurant Collection"
+title: "Dining at FIVE: Restaurant Collection"
 source_url: "https://www.fivehotelsandresorts.com/"
 category: "dining"
 ---
@@ -34,7 +34,7 @@ the Palm brings Arabic flavours with international influences.
 
 ## Street food and casual
 
-Soul St. — at FIVE Jumeirah Village and FIVE Zurich — is FIVE's gourmet
+Soul St., at FIVE Jumeirah Village and FIVE Zurich, is FIVE's gourmet
 street-food and cocktail concept. Goose Island Tap House (FIVE Jumeirah
 Village and FIVE LUXE) pairs craft beer with live sports. One for the Road at
 FIVE Jumeirah Village pours artisan coffee 24 hours a day, The Lobby Lounge
@@ -48,5 +48,5 @@ Paradiso at FIVE LUXE is the cocktail bar celebrated on the World's Best Bars
 circuit; Tête-à-Tête at FIVE LUXE is a French Monte Carlo-style bistro-bar;
 The Vault at FIVE Zurich is the wine bar and cigar lounge.
 
-FIVE does not publish menu prices on these pages — for menus, hours and
+FIVE does not publish menu prices on these pages. For menus, hours and
 reservations, book through each restaurant's page on the FIVE website.

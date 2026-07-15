@@ -1,5 +1,5 @@
 ---
-title: "Bohemia — Beach Club at FIVE Palm Jumeirah"
+title: "Bohemia: Beach Club at FIVE Palm Jumeirah"
 source_url: "https://www.bohemiadubai.com/"
 category: "nightlife"
 ---
@@ -13,10 +13,10 @@ and curated music programming on the sand.
 
 ## Weekly events
 
-- Moonlight Splash — Friday and Saturday from 7 PM, night swimming with DJs.
-- LOST at Bohemia — Friday afternoons, 12:30 PM to 4:30 PM.
-- Bohemia Sunday Brunch — Sundays 1 PM to 5 PM.
-- Sundowner at Bohemia — Sundays from 5:30 PM.
+- Moonlight Splash: Friday and Saturday from 7 PM, night swimming with DJs.
+- LOST at Bohemia: Friday afternoons, 12:30 PM to 4:30 PM.
+- Bohemia Sunday Brunch: Sundays 1 PM to 5 PM.
+- Sundowner at Bohemia: Sundays from 5:30 PM.
 
 Bohemia Presents brings headline international artists for day-to-night
 shows across the season.
@@ -25,4 +25,4 @@ shows across the season.
 
 Monday to Thursday 9 AM to 7 PM; Friday and Saturday 9 AM to midnight;
 Sunday 9 AM to 10 PM. Entry policies and event tickets are on the venue
-site — pricing varies by event and is best confirmed there.
+site; pricing varies by event and is best confirmed there.

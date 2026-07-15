@@ -8,7 +8,7 @@ category: "hotel"
 
 FIVE Palm Jumeirah is FIVE's flagship beachfront resort on the trunk of Dubai's
 Palm Jumeirah, styled as the "Hottest Hotel in Dubai" and a
-"dare-to-be-different immersive playground" — the brand invitation is simply
+"dare-to-be-different immersive playground"; the brand invitation is simply
 "Come Play". The resort combines a 150-metre private beach with a social pool
 scene, award-winning restaurants and some of the city's best-known nightlife.
 
@@ -35,8 +35,8 @@ vegan options) and The Delisserie (homemade pastries and casual all-day fare).
 
 Bohemia is the resort's beach-club concept with international DJs on the sand,
 and The Penthouse doubles as a rooftop nightclub that DJ Mag has ranked the
-number one club in the Middle East. BLING is the urban-music nightclub —
-Afrobeat and hip-hop, with supercar arrivals encouraged — and The Social Pool
+number one club in the Middle East. BLING is the urban-music nightclub
+(Afrobeat and hip-hop, with supercar arrivals encouraged) and The Social Pool
 is "Dubai's hottest social pool" with live entertainment through the day.
 Maiden Shanghai also offers private karaoke. Expect a packed weekly social
 calendar across the pool, beach and rooftop.

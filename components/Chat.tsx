@@ -32,7 +32,7 @@ export default function Chat() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       if (saved) setMessages(JSON.parse(saved));
     } catch {
-      /* corrupted storage — start fresh */
+      /* corrupted storage, start fresh */
     }
     setHydrated(true);
   }, []);
@@ -43,7 +43,7 @@ export default function Chat() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
     } catch {
-      /* storage full or unavailable — chat still works in-memory */
+      /* storage full or unavailable; chat still works in-memory */
     }
   }, [messages, hydrated]);
 
@@ -144,7 +144,7 @@ export default function Chat() {
         <div ref={endRef} />
       </div>
 
-      {/* Composer — sticky so it stays reachable in long conversations */}
+      {/* Composer: sticky so it stays reachable in long conversations */}
       <div className="sticky bottom-0 -mx-4 mt-8 bg-gradient-to-t from-night via-night/95 to-transparent px-4 pb-4 pt-6 sm:-mx-6 sm:px-6">
         <form
           onSubmit={(e) => {

@@ -30,7 +30,7 @@ with a Mediterranean focus), Goose Island Tap House (a sports pub with gourmet
 comfort food) and Playa Pacha, the all-day Ibiza-style pool and party venue.
 
 <!-- VERIFY: Paradiso's "World's Best Bar" phrasing against the live FIVE LUXE
-page — the site references World's 50 Best Bars recognition for the Paradiso
+page; the site references World's 50 Best Bars recognition for the Paradiso
 concept. -->
 
 ## Beach club and nightlife
