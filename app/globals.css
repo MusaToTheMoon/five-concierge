@@ -1,0 +1,123 @@
+@import "tailwindcss";
+
+/*
+  FIVE Concierge design tokens.
+  Two designed scenes (The Two Scenes Rule): dark is the default
+  "concierge desk after dark"; light is its own daylight tuning,
+  not an inversion. Gold obeys the Ten Percent Rule: actions,
+  selection, and focus only.
+*/
+
+:root {
+  /* Scene: night. Pure neutrals; gold carries the warmth. */
+  --bg: oklch(0.145 0 0);
+  --surface: oklch(0.185 0.003 78);
+  --raised: oklch(0.225 0.004 78);
+  --hairline: oklch(1 0 0 / 0.09);
+  --hairline-strong: oklch(1 0 0 / 0.16);
+  --ink: oklch(0.93 0.005 78);
+  --muted: oklch(0.71 0.01 78);
+  --faint: oklch(0.61 0.009 78);
+  --gold: oklch(0.85 0.115 82);
+  --gold-hover: oklch(0.89 0.105 84);
+  --gold-ink: oklch(0.24 0.03 80);      /* text on gold fills */
+  --gold-text: oklch(0.85 0.1 82);      /* gold used as text on bg */
+  --gold-soft: oklch(0.85 0.115 82 / 0.12);
+  --danger: oklch(0.72 0.14 25);
+  --danger-soft: oklch(0.72 0.14 25 / 0.12);
+  --shadow-overlay: 0 16px 48px oklch(0 0 0 / 0.5);
+}
+
+:root[data-theme="light"] {
+  /* Scene: day. Pure white; gold deepens to bronze for contrast. */
+  --bg: oklch(1 0 0);
+  --surface: oklch(0.972 0.003 80);
+  --raised: oklch(0.945 0.005 80);
+  --hairline: oklch(0 0 0 / 0.1);
+  --hairline-strong: oklch(0 0 0 / 0.18);
+  --ink: oklch(0.22 0.01 78);
+  --muted: oklch(0.47 0.015 78);
+  --faint: oklch(0.53 0.014 78);
+  --gold: oklch(0.56 0.115 78);
+  --gold-hover: oklch(0.5 0.115 78);
+  --gold-ink: oklch(0.99 0.005 80);     /* white text on bronze fills */
+  --gold-text: oklch(0.52 0.115 78);
+  --gold-soft: oklch(0.56 0.115 78 / 0.1);
+  --danger: oklch(0.53 0.19 27);
+  --danger-soft: oklch(0.53 0.19 27 / 0.09);
+  --shadow-overlay: 0 16px 48px oklch(0 0 0 / 0.16);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-gold: var(--gold);
+  --color-gold-hover: var(--gold-hover);
+  --color-gold-ink: var(--gold-ink);
+  --color-gold-text: var(--gold-text);
+  --color-gold-soft: var(--gold-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --font-sans: var(--font-instrument-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-instrument-serif), Georgia, serif;
+  /* Fixed rem scale, ratio ~1.2, tuned for product UI. */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.1875rem;
+  --text-xl: 1.4375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.125rem;
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+html {
+  color-scheme: dark;
+}
+html[data-theme="light"] {
+  color-scheme: light;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-instrument-sans), ui-sans-serif, system-ui, sans-serif;
+  /* Light-on-dark compensation; light theme resets below. */
+  letter-spacing: 0.011em;
+  -webkit-font-smoothing: antialiased;
+}
+html[data-theme="light"] body {
+  letter-spacing: 0.004em;
+}
+
+::selection {
+  background: var(--gold);
+  color: var(--gold-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* The chat composer signals focus on its container border instead;
+   a ring inside a bordered box reads as a double frame. */
+form textarea:focus-visible {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

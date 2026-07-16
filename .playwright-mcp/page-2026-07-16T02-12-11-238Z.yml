@@ -1,0 +1,32 @@
+- generic [ref=f1e1]:
+  - generic [ref=f1e2]:
+    - banner [ref=f1e3]:
+      - generic [ref=f1e4]:
+        - paragraph [ref=f1e5]: FIVE
+        - tablist "Concierge modes" [ref=f1e7]:
+          - tab "Concierge" [selected] [ref=f1e8]
+          - tab "Plan My Night" [ref=f1e10]
+        - button "Switch between dark and light theme" [ref=f1e12]
+    - main [ref=f1e17]:
+      - tabpanel "Concierge" [ref=f1e18]:
+        - generic [ref=f1e19]:
+          - list [ref=f1e108]:
+            - listitem [ref=f1e109]:
+              - paragraph [ref=f1e110]: What's the vibe at Bohemia in Zurich?
+            - listitem [ref=f1e111]:
+              - paragraph [ref=f1e112]: Bohemia is a luxury beach club at FIVE Palm Jumeirah in Dubai, offering an ultra-luxe experience with sun loungers, an infinity glass pool, and curated music programming. The CONTEXT does not mention a Bohemia in Zurich. For information on nightlife at FIVE Zurich, you might consider The Penthouse at FIVE Zurich, which is a rooftop terrace, lounge, and nightclub with panoramic city views.
+            - listitem [ref=f1e117]:
+              - paragraph [ref=f1e118]: Tell me about the ReFIVE spa
+            - listitem [ref=f1e119]:
+              - generic [ref=f1e120]: Something went wrong at the desk. Please try that once more.
+              - button "Try again" [ref=f1e121]
+          - generic [ref=f1e22]:
+            - generic [ref=f1e23]:
+              - textbox "Ask the concierge" [active] [ref=f1e24]:
+                - /placeholder: Ask the concierge…
+              - button "Send" [disabled] [ref=f1e25]
+            - button "Clear conversation" [ref=f1e114]
+    - contentinfo [ref=f1e28]:
+      - paragraph [ref=f1e29]: Unofficial demo. Not affiliated with FIVE Hotels and Resorts.
+  - button "Open Next.js Dev Tools" [ref=f1e51] [cursor=pointer]
+  - alert [ref=f1e55]

@@ -1,0 +1,39 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - paragraph [ref=e5]: FIVE
+        - tablist "Concierge modes" [ref=e7]:
+          - tab "Concierge" [selected] [ref=e8]
+          - tab "Plan My Night" [ref=e10]
+        - button "Switch between dark and light theme" [ref=e12]
+    - main [ref=e16]:
+      - tabpanel "Concierge" [ref=e17]:
+        - generic [ref=e18]:
+          - generic [ref=e20]:
+            - heading "Good morning." [level=1] [ref=e21]
+            - paragraph [ref=e22]: Ask about FIVE's hotels, tables, parties and spa, across Dubai, Zurich and Ibiza. Every answer cites the page it came from.
+            - list [ref=e23]:
+              - listitem [ref=e24]:
+                - button "What's the vibe at Bohemia in Zurich? →" [ref=e25]:
+                  - text: What's the vibe at Bohemia in Zurich?
+                  - generic [ref=e26]: →
+              - listitem [ref=e27]:
+                - button "Where should we party in Dubai on a Friday night? →" [ref=e28]:
+                  - text: Where should we party in Dubai on a Friday night?
+                  - generic [ref=e29]: →
+              - listitem [ref=e30]:
+                - button "Tell me about the ReFIVE spa →" [ref=e31]:
+                  - text: Tell me about the ReFIVE spa
+                  - generic [ref=e32]: →
+              - listitem [ref=e33]:
+                - button "Which FIVE rooftop has the best view in Ibiza? →" [ref=e34]:
+                  - text: Which FIVE rooftop has the best view in Ibiza?
+                  - generic [ref=e35]: →
+          - generic [ref=e37]:
+            - textbox "Ask the concierge" [ref=e38]:
+              - /placeholder: Ask the concierge…
+            - button "Send" [disabled] [ref=e39]
+    - contentinfo [ref=e42]:
+      - paragraph [ref=e43]: Unofficial demo. Not affiliated with FIVE Hotels and Resorts.
+  - alert [ref=e44]
