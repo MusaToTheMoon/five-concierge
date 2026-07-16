@@ -36,7 +36,7 @@ export default function Home() {
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="sticky top-0 z-10 border-b border-hairline bg-bg">
-        <div className="mx-auto flex h-14 w-full max-w-2xl items-center justify-between gap-4 px-5 sm:px-6">
+        <div className="mx-auto flex h-14 w-full max-w-2xl items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6">
           <p className="flex items-baseline gap-1.5 text-sm font-semibold tracking-[0.14em]">
             FIVE
             <span aria-hidden className="size-1 self-center rounded-full bg-gold" />
@@ -61,7 +61,7 @@ export default function Home() {
                   aria-controls={`panel-${m.id}`}
                   tabIndex={active ? 0 : -1}
                   onClick={() => setMode(m.id)}
-                  className={`relative rounded-md px-3 py-2 text-sm transition-colors duration-150 ${
+                  className={`relative rounded-md px-2 py-2 text-sm whitespace-nowrap transition-colors duration-150 sm:px-3 ${
                     active ? "text-ink" : "text-muted hover:text-ink"
                   }`}
                 >
