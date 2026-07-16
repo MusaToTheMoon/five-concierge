@@ -37,10 +37,7 @@ export default function Home() {
     <div className="flex min-h-dvh flex-col">
       <header className="sticky top-0 z-10 border-b border-hairline bg-bg">
         <div className="mx-auto flex h-14 w-full max-w-2xl items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6">
-          <p className="flex items-baseline gap-1.5 text-sm font-semibold tracking-[0.14em]">
-            FIVE
-            <span aria-hidden className="size-1 self-center rounded-full bg-gold" />
-          </p>
+          <p className="text-sm font-semibold tracking-[0.14em]">FIVE</p>
           <nav
             role="tablist"
             aria-label="Concierge modes"
@@ -100,10 +97,25 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="mx-auto w-full max-w-2xl px-5 pt-2 pb-5 sm:px-6">
-        <p className="text-xs text-faint">
-          Unofficial demo. Not affiliated with FIVE Hotels and Resorts.
-        </p>
+      <footer className="border-t border-hairline">
+        <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-1 px-4 py-5 text-center sm:px-6">
+          <p className="text-xs text-faint">
+            Unofficial demo and portfolio project. Not affiliated with FIVE
+            Hotels and Resorts.
+          </p>
+          <p className="text-xs text-faint/70">
+            Content sourced from{" "}
+            <a
+              href="https://www.fivehotelsandresorts.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline decoration-gold-text/40 underline-offset-2 transition-colors hover:text-gold-text"
+            >
+              fivehotelsandresorts.com
+            </a>
+            . Always confirm details with the hotel.
+          </p>
+        </div>
       </footer>
     </div>
   );
