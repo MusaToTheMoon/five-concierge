@@ -1,0 +1,49 @@
+- generic [active] [ref=f2e1]:
+  - generic [ref=f2e2]:
+    - banner [ref=f2e3]:
+      - generic [ref=f2e4]:
+        - paragraph [ref=f2e5]: FIVE
+        - tablist "Concierge modes" [ref=f2e7]:
+          - tab "Concierge" [ref=f2e8]
+          - tab "Plan My Night" [selected] [ref=f2e10]
+        - button "Switch between dark and light theme" [ref=f2e12]
+    - main [ref=f2e17]:
+      - tabpanel "Plan My Night" [ref=f2e77]:
+        - article [ref=f2e126]:
+          - generic [ref=f2e127]:
+            - heading "Dubai's Ultimate Party Night" [level=1] [ref=f2e128]
+            - paragraph [ref=f2e129]: Experience the vibrant energy and iconic nightlife of FIVE Hotels and Resorts in Dubai.
+            - paragraph [ref=f2e130]: Dubai · party · couple
+          - list [ref=f2e131]:
+            - listitem [ref=f2e132]:
+              - time [ref=f2e134]: 7:30 PM
+              - generic [ref=f2e135]:
+                - heading "Maiden ShanghaiFIVE Palm Jumeirah" [level=2] [ref=f2e136]
+                - paragraph [ref=f2e137]: Begin your evening with an award-winning contemporary Chinese dining experience, celebrated by Gault & Millau. Indulge in exquisite flavors before the night truly begins.
+                - list "Sources" [ref=f2e139]:
+                  - listitem [ref=f2e140]:
+                    - link "FIVE Palm Jumeirah, Dubai" [ref=f2e141] [cursor=pointer]:
+                      - /url: https://palmjumeirah.fivehotelsandresorts.com/
+            - listitem [ref=f2e146]:
+              - time [ref=f2e148]: 9:30 PM
+              - generic [ref=f2e149]:
+                - heading "The PenthouseFIVE Palm Jumeirah" [level=2] [ref=f2e150]
+                - paragraph [ref=f2e151]: Ascend to the rooftop lounge and nightclub, ranked the number one club in the Middle East by DJ Mag. Enjoy Japanese-fusion dining with late-night DJs high above the Palm.
+                - list "Sources" [ref=f2e153]:
+                  - listitem [ref=f2e154]:
+                    - 'link "Nightlife at FIVE: Clubs, Rooftops and Beach Parties" [ref=f2e155] [cursor=pointer]':
+                      - /url: https://www.fivehotelsandresorts.com/
+            - listitem [ref=f2e160]:
+              - time [ref=f2e162]: 11:30 PM
+              - generic [ref=f2e163]:
+                - heading "BLINGFIVE Palm Jumeirah" [level=2] [ref=f2e164]
+                - paragraph [ref=f2e165]: Dive into the urban side of Dubai's nightlife at BLING, where Afrobeat and hip-hop beats set the stage. This supercar-friendly nightclub promises an unforgettable experience.
+                - list "Sources" [ref=f2e167]:
+                  - listitem [ref=f2e168]:
+                    - 'link "Nightlife at FIVE: Clubs, Rooftops and Beach Parties" [ref=f2e169] [cursor=pointer]':
+                      - /url: https://www.fivehotelsandresorts.com/
+          - button "Plan another evening" [ref=f2e174]
+    - contentinfo [ref=f2e65]:
+      - paragraph [ref=f2e66]: Unofficial demo. Not affiliated with FIVE Hotels and Resorts.
+  - button "Open Next.js Dev Tools" [ref=f2e72] [cursor=pointer]
+  - alert [ref=f2e76]

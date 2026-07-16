@@ -1,0 +1,73 @@
+- generic [ref=f2e1]:
+  - generic [ref=f2e2]:
+    - banner [ref=f2e3]:
+      - generic [ref=f2e4]:
+        - paragraph [ref=f2e5]: FIVE
+        - tablist "Concierge modes" [ref=f2e7]:
+          - tab "Concierge" [ref=f2e8]
+          - tab "Plan My Night" [active] [selected] [ref=f2e10]
+        - button "Switch between dark and light theme" [ref=f2e12]
+    - main [ref=f2e17]:
+      - tabpanel "Plan My Night" [ref=f2e77]:
+        - generic [ref=f2e78]:
+          - heading "One perfect evening." [level=1] [ref=f2e79]
+          - paragraph [ref=f2e80]: Tell the concierge the shape of your night and get a curated, source-grounded itinerary across FIVE's venues.
+          - generic [ref=f2e81]:
+            - group "Destination" [ref=f2e82]:
+              - generic [ref=f2e84]:
+                - generic [ref=f2e85] [cursor=pointer]:
+                  - radio "Dubai" [checked] [ref=f2e86]
+                  - text: Dubai
+                - generic [ref=f2e87] [cursor=pointer]:
+                  - radio "Zurich" [ref=f2e88]
+                  - text: Zurich
+                - generic [ref=f2e89] [cursor=pointer]:
+                  - radio "Ibiza" [ref=f2e90]
+                  - text: Ibiza
+            - group "Vibe" [ref=f2e91]:
+              - generic [ref=f2e93]:
+                - generic [ref=f2e94] [cursor=pointer]:
+                  - radio "chic dinner" [ref=f2e95]
+                  - text: chic dinner
+                - generic [ref=f2e96] [cursor=pointer]:
+                  - radio "party" [checked] [ref=f2e97]
+                  - text: party
+                - generic [ref=f2e98] [cursor=pointer]:
+                  - radio "relaxed" [ref=f2e99]
+                  - text: relaxed
+                - generic [ref=f2e100] [cursor=pointer]:
+                  - radio "romantic" [ref=f2e101]
+                  - text: romantic
+            - group "Going as" [ref=f2e102]:
+              - generic [ref=f2e104]:
+                - generic [ref=f2e105] [cursor=pointer]:
+                  - radio "solo" [ref=f2e106]
+                  - text: solo
+                - generic [ref=f2e107] [cursor=pointer]:
+                  - radio "couple" [checked] [ref=f2e108]
+                  - text: couple
+                - generic [ref=f2e109] [cursor=pointer]:
+                  - radio "small group" [ref=f2e110]
+                  - text: small group
+                - generic [ref=f2e111] [cursor=pointer]:
+                  - radio "big group" [ref=f2e112]
+                  - text: big group
+            - group "Interests" [ref=f2e113]:
+              - generic [ref=f2e115]:
+                - generic [ref=f2e116] [cursor=pointer]:
+                  - checkbox "dining" [checked] [ref=f2e117]
+                  - text: dining
+                - generic [ref=f2e118] [cursor=pointer]:
+                  - checkbox "nightlife" [checked] [ref=f2e119]
+                  - text: nightlife
+                - generic [ref=f2e120] [cursor=pointer]:
+                  - checkbox "spa" [ref=f2e121]
+                  - text: spa
+                - generic [ref=f2e122] [cursor=pointer]:
+                  - checkbox "pool" [ref=f2e123]
+                  - text: pool
+            - button "Curate my evening" [ref=f2e125]
+    - contentinfo [ref=f2e65]:
+      - paragraph [ref=f2e66]: Unofficial demo. Not affiliated with FIVE Hotels and Resorts.
+  - button "Open Next.js Dev Tools" [ref=f2e72] [cursor=pointer]
+  - alert [ref=f2e76]

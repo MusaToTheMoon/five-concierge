@@ -49,6 +49,9 @@ export default function Chat() {
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // localStorage is unavailable during SSR, so history must be seeded
+    // after mount; this is the standard hydration-safe pattern.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMessages(loadHistory());
     setHydrated(true);
   }, []);
@@ -204,7 +207,7 @@ export default function Chat() {
         )}
       </div>
 
-      <div className="sticky bottom-0 bg-bg pb-4 sm:pb-6">
+      <div className="sticky bottom-0 bg-linear-to-t from-bg via-bg via-75% to-transparent pt-6 pb-4 sm:pb-6">
         <form
           onSubmit={onSubmit}
           className="flex items-end gap-2 rounded-2xl border border-hairline bg-surface p-2 transition-colors duration-150 focus-within:border-gold/45"
