@@ -23,7 +23,7 @@ export default function ThemeToggle() {
       type="button"
       onClick={toggle}
       aria-label="Switch between dark and light theme"
-      className="grid size-9 place-items-center rounded-full border border-hairline text-muted transition-colors duration-150 hover:border-hairline-strong hover:text-ink"
+      className="relative grid size-10 place-items-center rounded-full border border-hairline text-muted transition-colors duration-150 before:absolute before:-inset-1 before:content-[''] hover:border-hairline-strong hover:text-ink"
     >
       <span className="hidden [html[data-theme=dark]_&]:block">
         <SunIcon />

@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Itinerary } from "@/lib/types";
 import SourceChips from "./SourceChips";
 import { RetryIcon } from "./icons";
+
+const STORAGE_KEY = "five-itinerary";
 
 const DESTINATIONS = ["Dubai", "Zurich", "Ibiza"] as const;
 const VIBES = ["chic dinner", "party", "relaxed", "romantic"] as const;
@@ -15,11 +17,29 @@ type Vibe = (typeof VIBES)[number];
 type Group = (typeof GROUPS)[number];
 type Interest = (typeof INTERESTS)[number];
 
+interface StoredPlan {
+  itinerary: Itinerary;
+  destination: Destination;
+  vibe: Vibe;
+  group: Group;
+  interests: Interest[];
+}
+
 const chipBase =
-  "rounded-full border px-3.5 py-1.5 text-sm capitalize transition-colors duration-150";
+  "rounded-full border px-3.5 py-2 text-sm capitalize transition-colors duration-150 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-gold";
 const chipOff =
   "border-hairline text-muted hover:border-hairline-strong hover:text-ink";
 const chipOn = "border-gold bg-gold-soft text-ink";
+
+function loadPlan(): StoredPlan | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const parsed = raw ? (JSON.parse(raw) as StoredPlan) : null;
+    return parsed?.itinerary?.stops?.length ? parsed : null;
+  } catch {
+    return null;
+  }
+}
 
 function ChoiceGroup<T extends string>({
   label,
@@ -39,7 +59,10 @@ function ChoiceGroup<T extends string>({
       </legend>
       <div className="mt-2.5 flex flex-wrap gap-2">
         {options.map((option) => (
-          <label key={option} className={`${chipBase} cursor-pointer ${value === option ? chipOn : chipOff}`}>
+          <label
+            key={option}
+            className={`${chipBase} cursor-pointer ${value === option ? chipOn : chipOff}`}
+          >
             <input
               type="radio"
               name={label}
@@ -62,8 +85,30 @@ export default function PlanMyNight() {
   const [group, setGroup] = useState<Group>("couple");
   const [interests, setInterests] = useState<Interest[]>(["dining", "nightlife"]);
   const [itinerary, setItinerary] = useState<Itinerary | null>(null);
+  const [lastPlan, setLastPlan] = useState<StoredPlan | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    // localStorage is unavailable during SSR, so the saved plan must be
+    // restored after mount; this is the standard hydration-safe pattern.
+    const stored = loadPlan();
+    if (stored) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setLastPlan(stored);
+      setItinerary(stored.itinerary);
+      setDestination(stored.destination);
+      setVibe(stored.vibe);
+      setGroup(stored.group);
+      setInterests(stored.interests);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (itinerary) titleRef.current?.focus({ preventScroll: true });
+  }, [itinerary]);
 
   function toggleInterest(interest: Interest) {
     setInterests((current) =>
@@ -77,6 +122,7 @@ export default function PlanMyNight() {
     setPending(true);
     setError(null);
     setItinerary(null);
+    setCopied(false);
     try {
       const res = await fetch("/api/itinerary", {
         method: "POST",
@@ -85,7 +131,20 @@ export default function PlanMyNight() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Something went wrong.");
-      setItinerary(data.itinerary);
+      const plan: StoredPlan = {
+        itinerary: data.itinerary,
+        destination,
+        vibe,
+        group,
+        interests,
+      };
+      setItinerary(plan.itinerary);
+      setLastPlan(plan);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(plan));
+      } catch {
+        /* private mode; the plan just won't survive a reload */
+      }
     } catch (err) {
       setError(
         err instanceof Error && err.message
@@ -94,6 +153,25 @@ export default function PlanMyNight() {
       );
     } finally {
       setPending(false);
+    }
+  }
+
+  async function copyPlan() {
+    if (!itinerary) return;
+    const lines = [
+      itinerary.title,
+      itinerary.subtitle,
+      "",
+      ...itinerary.stops.map(
+        (stop) => `${stop.time}  ${stop.venue} (${stop.property})`,
+      ),
+    ];
+    try {
+      await navigator.clipboard.writeText(lines.join("\n"));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* clipboard blocked; the button just won't confirm */
     }
   }
 
@@ -158,6 +236,15 @@ export default function PlanMyNight() {
               {interests.length === 0 && (
                 <p className="text-sm text-muted">Pick at least one interest.</p>
               )}
+              {lastPlan && interests.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setItinerary(lastPlan.itinerary)}
+                  className="text-sm text-muted underline-offset-4 transition-colors duration-150 hover:text-ink hover:underline"
+                >
+                  Back to &ldquo;{lastPlan.itinerary.title}&rdquo;
+                </button>
+              )}
             </div>
           </form>
           {error && (
@@ -176,84 +263,101 @@ export default function PlanMyNight() {
         </>
       )}
 
-      {pending && (
-        <div aria-live="polite">
-          <p className="font-serif text-lg italic text-muted">
-            Curating your evening…
-          </p>
-          <div className="mt-8 space-y-8">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className="flex gap-6">
-                <div
-                  className="h-3.5 w-14 shrink-0 animate-pulse rounded bg-raised"
-                  style={{ animationDelay: `${i * 120}ms` }}
-                />
-                <div className="flex-1 space-y-2.5">
-                  <div
-                    className="h-3.5 w-2/5 animate-pulse rounded bg-raised"
-                    style={{ animationDelay: `${i * 120 + 60}ms` }}
-                  />
-                  <div
-                    className="h-3.5 w-4/5 animate-pulse rounded bg-raised"
-                    style={{ animationDelay: `${i * 120 + 120}ms` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {itinerary && (
-        <article>
-          <header>
-            <h1 className="font-serif text-3xl italic">{itinerary.title}</h1>
-            <p className="mt-2 text-muted">{itinerary.subtitle}</p>
-            <p className="mt-4 text-xs tracking-[0.08em] text-faint uppercase">
-              {destination} · {vibe} · {group}
+      <div aria-live="polite">
+        {pending && (
+          <div>
+            <p className="font-serif text-lg italic text-muted">
+              Curating your evening…
             </p>
-          </header>
-          <ol className="mt-10">
-            {itinerary.stops.map((stop, i) => (
-              <li
-                key={i}
-                className="relative grid gap-x-6 gap-y-1 border-l border-hairline pt-0 pb-10 pl-6 last:pb-2 sm:grid-cols-[5.5rem_1fr] sm:pl-8"
-              >
-                <span
-                  aria-hidden
-                  className="absolute top-1.5 -left-[3px] size-[5px] rounded-full bg-gold"
-                />
-                <time className="text-sm text-gold-text tabular-nums">
-                  {stop.time}
-                </time>
-                <div className="space-y-1.5">
-                  <h2 className="text-base font-medium">
-                    {stop.venue}
-                    <span className="ml-2 text-sm font-normal text-faint">
-                      {stop.property}
-                    </span>
-                  </h2>
-                  <p className="max-w-[60ch] text-sm leading-relaxed text-muted">
-                    {stop.blurb}
-                  </p>
-                  {stop.source && (
-                    <div className="pt-1">
-                      <SourceChips sources={[stop.source]} />
-                    </div>
-                  )}
+            <div className="mt-8 space-y-8">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="flex gap-6">
+                  <div
+                    className="h-3.5 w-14 shrink-0 animate-pulse rounded bg-raised"
+                    style={{ animationDelay: `${i * 120}ms` }}
+                  />
+                  <div className="flex-1 space-y-2.5">
+                    <div
+                      className="h-3.5 w-2/5 animate-pulse rounded bg-raised"
+                      style={{ animationDelay: `${i * 120 + 60}ms` }}
+                    />
+                    <div
+                      className="h-3.5 w-4/5 animate-pulse rounded bg-raised"
+                      style={{ animationDelay: `${i * 120 + 120}ms` }}
+                    />
+                  </div>
                 </div>
-              </li>
-            ))}
-          </ol>
-          <button
-            type="button"
-            onClick={() => setItinerary(null)}
-            className="mt-6 rounded-full border border-hairline px-5 py-2 text-sm text-muted transition-colors duration-150 hover:border-hairline-strong hover:text-ink"
-          >
-            Plan another evening
-          </button>
-        </article>
-      )}
+              ))}
+            </div>
+          </div>
+        )}
+
+        {itinerary && (
+          <article>
+            <header>
+              <h1
+                ref={titleRef}
+                tabIndex={-1}
+                className="font-serif text-3xl italic outline-none"
+              >
+                {itinerary.title}
+              </h1>
+              <p className="mt-2 text-muted">{itinerary.subtitle}</p>
+              <p className="mt-4 text-xs tracking-[0.08em] text-faint uppercase">
+                {destination} · {vibe} · {group}
+              </p>
+            </header>
+            <ol className="mt-10">
+              {itinerary.stops.map((stop, i) => (
+                <li
+                  key={i}
+                  className="relative grid gap-x-6 gap-y-1 border-l border-hairline pt-0 pb-10 pl-6 last:pb-2 sm:grid-cols-[5.5rem_1fr] sm:pl-8"
+                >
+                  <span
+                    aria-hidden
+                    className="absolute top-1.5 -left-[3px] size-[5px] rounded-full bg-gold"
+                  />
+                  <time className="text-sm text-gold-text tabular-nums">
+                    {stop.time}
+                  </time>
+                  <div className="space-y-1.5">
+                    <h2 className="text-base font-medium">
+                      {stop.venue}
+                      <span className="ml-2 text-sm font-normal text-faint">
+                        {stop.property}
+                      </span>
+                    </h2>
+                    <p className="max-w-[60ch] text-sm leading-relaxed text-muted">
+                      {stop.blurb}
+                    </p>
+                    {stop.source && (
+                      <div className="pt-1">
+                        <SourceChips sources={[stop.source]} />
+                      </div>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ol>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => void copyPlan()}
+                className="rounded-full border border-hairline px-5 py-2.5 text-sm text-muted transition-colors duration-150 hover:border-hairline-strong hover:text-ink"
+              >
+                {copied ? "Copied" : "Copy plan"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setItinerary(null)}
+                className="rounded-full border border-hairline px-5 py-2.5 text-sm text-muted transition-colors duration-150 hover:border-hairline-strong hover:text-ink"
+              >
+                Plan another evening
+              </button>
+            </div>
+          </article>
+        )}
+      </div>
     </div>
   );
 }

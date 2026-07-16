@@ -45,6 +45,7 @@ export default function Chat() {
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmClear, setConfirmClear] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -66,7 +67,13 @@ export default function Chat() {
   }, [messages, hydrated]);
 
   useEffect(() => {
-    if (pending || messages.length > 0) {
+    // Don't yank the viewport if the user scrolled up to reread; only
+    // follow the thread when they're already near the bottom or just sent.
+    const doc = document.scrollingElement;
+    const nearBottom = doc
+      ? doc.scrollHeight - doc.scrollTop - doc.clientHeight < 400
+      : true;
+    if (pending || (messages.length > 0 && nearBottom)) {
       endRef.current?.scrollIntoView({ block: "end" });
     }
   }, [messages, pending]);
@@ -130,8 +137,14 @@ export default function Chat() {
   }
 
   function clearConversation() {
+    if (!confirmClear) {
+      setConfirmClear(true);
+      window.setTimeout(() => setConfirmClear(false), 3500);
+      return;
+    }
     setMessages([]);
     setError(null);
+    setConfirmClear(false);
   }
 
   const empty = hydrated && messages.length === 0 && !pending;
@@ -165,7 +178,9 @@ export default function Chat() {
             </ul>
           </div>
         ) : (
-          <ol className="space-y-8 py-8" aria-live="polite">
+          <>
+            <h1 className="sr-only">Concierge chat</h1>
+            <ol className="space-y-8 py-8" aria-live="polite">
             {messages.map((message, i) =>
               message.role === "user" ? (
                 <li key={i} className="flex justify-end">
@@ -183,7 +198,8 @@ export default function Chat() {
               ),
             )}
             {pending && (
-              <li aria-label="The concierge is writing" className="space-y-2.5">
+              <li className="space-y-2.5">
+                <span className="sr-only">The concierge is writing.</span>
                 <div className="h-3.5 w-4/5 animate-pulse rounded bg-raised" />
                 <div className="h-3.5 w-3/5 animate-pulse rounded bg-raised [animation-delay:120ms]" />
                 <div className="h-3.5 w-2/5 animate-pulse rounded bg-raised [animation-delay:240ms]" />
@@ -203,7 +219,8 @@ export default function Chat() {
               </li>
             )}
             <div ref={endRef} className="scroll-mb-32" />
-          </ol>
+            </ol>
+          </>
         )}
       </div>
 
@@ -229,7 +246,7 @@ export default function Chat() {
             type="submit"
             disabled={pending || draft.trim() === ""}
             aria-label="Send"
-            className="grid size-9 shrink-0 place-items-center rounded-full bg-gold text-gold-ink transition-[background-color,opacity] duration-150 hover:bg-gold-hover disabled:cursor-default disabled:opacity-35"
+            className="grid size-10 shrink-0 place-items-center rounded-full bg-gold text-gold-ink transition-[background-color,opacity] duration-150 hover:bg-gold-hover disabled:cursor-default disabled:opacity-35"
           >
             <ArrowUpIcon />
           </button>
@@ -239,10 +256,14 @@ export default function Chat() {
             <button
               type="button"
               onClick={clearConversation}
-              className="inline-flex items-center gap-1.5 text-xs text-faint transition-colors duration-150 hover:text-muted"
+              className={`-m-2 inline-flex items-center gap-1.5 p-2 text-xs transition-colors duration-150 ${
+                confirmClear
+                  ? "text-danger"
+                  : "text-faint hover:text-muted"
+              }`}
             >
               <EraseIcon className="size-3.5" />
-              Clear conversation
+              {confirmClear ? "Tap again to clear" : "Clear conversation"}
             </button>
           </div>
         )}
