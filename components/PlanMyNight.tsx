@@ -1,63 +1,128 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import SourceLinks from "./SourceLinks";
-import type { Itinerary, Source } from "@/lib/types";
+import { useEffect, useRef, useState } from "react";
+import type { Itinerary } from "@/lib/types";
+import SourceChips from "./SourceChips";
+import { RetryIcon } from "./icons";
 
-const STORAGE_KEY = "five-concierge-night-v1";
+const STORAGE_KEY = "five-itinerary";
 
 const DESTINATIONS = ["Dubai", "Zurich", "Ibiza"] as const;
-const VIBES = [
-  { value: "chic dinner", label: "Chic dinner" },
-  { value: "party", label: "Party" },
-  { value: "relaxed", label: "Relaxed" },
-  { value: "romantic", label: "Romantic" },
-] as const;
-const GROUPS = [
-  { value: "solo", label: "Just me" },
-  { value: "couple", label: "Two of us" },
-  { value: "small group", label: "3 to 5" },
-  { value: "big group", label: "The squad" },
-] as const;
+const VIBES = ["chic dinner", "party", "relaxed", "romantic"] as const;
+const GROUPS = ["solo", "couple", "small group", "big group"] as const;
 const INTERESTS = ["dining", "nightlife", "spa", "pool"] as const;
 
-interface SavedNight {
+type Destination = (typeof DESTINATIONS)[number];
+type Vibe = (typeof VIBES)[number];
+type Group = (typeof GROUPS)[number];
+type Interest = (typeof INTERESTS)[number];
+
+interface StoredPlan {
   itinerary: Itinerary;
-  sources: Source[];
+  destination: Destination;
+  vibe: Vibe;
+  group: Group;
+  interests: Interest[];
 }
 
-/** The signature flow: pick a mood, get a grounded evening itinerary. */
-export default function PlanMyNight() {
-  const [destination, setDestination] = useState<string>("Dubai");
-  const [vibe, setVibe] = useState<string>("chic dinner");
-  const [group, setGroup] = useState<string>("couple");
-  const [interests, setInterests] = useState<string[]>(["dining", "nightlife"]);
-  const [night, setNight] = useState<SavedNight | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+const chipBase =
+  "rounded-full border px-3.5 py-2 text-sm capitalize transition-colors duration-150 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-gold";
+const chipOff =
+  "border-hairline text-muted hover:border-hairline-strong hover:text-ink";
+const chipOn = "border-gold bg-gold-soft text-ink";
 
-  // Bring back the last curated night on reload (post-mount read avoids a
-  // hydration mismatch, see Chat.tsx).
+function loadPlan(): StoredPlan | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const parsed = raw ? (JSON.parse(raw) as StoredPlan) : null;
+    return parsed?.itinerary?.stops?.length ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function ChoiceGroup<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: readonly T[];
+  value: T;
+  onChange: (v: T) => void;
+}) {
+  return (
+    <fieldset>
+      <legend className="text-xs font-medium tracking-[0.08em] text-faint uppercase">
+        {label}
+      </legend>
+      <div className="mt-2.5 flex flex-wrap gap-2">
+        {options.map((option) => (
+          <label
+            key={option}
+            className={`${chipBase} cursor-pointer ${value === option ? chipOn : chipOff}`}
+          >
+            <input
+              type="radio"
+              name={label}
+              value={option}
+              checked={value === option}
+              onChange={() => onChange(option)}
+              className="sr-only"
+            />
+            {option}
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+export default function PlanMyNight() {
+  const [destination, setDestination] = useState<Destination>("Dubai");
+  const [vibe, setVibe] = useState<Vibe>("party");
+  const [group, setGroup] = useState<Group>("couple");
+  const [interests, setInterests] = useState<Interest[]>(["dining", "nightlife"]);
+  const [itinerary, setItinerary] = useState<Itinerary | null>(null);
+  const [lastPlan, setLastPlan] = useState<StoredPlan | null>(null);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+    // localStorage is unavailable during SSR, so the saved plan must be
+    // restored after mount; this is the standard hydration-safe pattern.
+    const stored = loadPlan();
+    if (stored) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (saved) setNight(JSON.parse(saved));
-    } catch {
-      /* start fresh */
+      setLastPlan(stored);
+      setItinerary(stored.itinerary);
+      setDestination(stored.destination);
+      setVibe(stored.vibe);
+      setGroup(stored.group);
+      setInterests(stored.interests);
     }
   }, []);
 
-  const toggleInterest = (interest: string) =>
+  useEffect(() => {
+    if (itinerary) titleRef.current?.focus({ preventScroll: true });
+  }, [itinerary]);
+
+  function toggleInterest(interest: Interest) {
     setInterests((current) =>
       current.includes(interest)
         ? current.filter((i) => i !== interest)
         : [...current, interest],
     );
+  }
 
-  const curate = async () => {
-    setIsLoading(true);
+  async function curate() {
+    setPending(true);
     setError(null);
+    setItinerary(null);
+    setCopied(false);
     try {
       const res = await fetch("/api/itinerary", {
         method: "POST",
@@ -65,207 +130,234 @@ export default function PlanMyNight() {
         body: JSON.stringify({ destination, vibe, group, interests }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error ?? "Request failed");
-      const saved: SavedNight = { itinerary: data.itinerary, sources: data.sources };
-      setNight(saved);
+      if (!res.ok) throw new Error(data?.error || "Something went wrong.");
+      const plan: StoredPlan = {
+        itinerary: data.itinerary,
+        destination,
+        vibe,
+        group,
+        interests,
+      };
+      setItinerary(plan.itinerary);
+      setLastPlan(plan);
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(plan));
       } catch {
-        /* non-fatal */
+        /* private mode; the plan just won't survive a reload */
       }
     } catch (err) {
       setError(
-        err instanceof Error && err.message !== "Failed to fetch"
+        err instanceof Error && err.message
           ? err.message
-          : "The concierge couldn't be reached. Check your connection and try again.",
+          : "The concierge couldn't be reached. Please try again.",
       );
     } finally {
-      setIsLoading(false);
+      setPending(false);
     }
-  };
+  }
+
+  async function copyPlan() {
+    if (!itinerary) return;
+    const lines = [
+      itinerary.title,
+      itinerary.subtitle,
+      "",
+      ...itinerary.stops.map(
+        (stop) => `${stop.time}  ${stop.venue} (${stop.property})`,
+      ),
+    ];
+    try {
+      await navigator.clipboard.writeText(lines.join("\n"));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* clipboard blocked; the button just won't confirm */
+    }
+  }
+
+  const showComposer = !itinerary && !pending;
 
   return (
-    <section aria-label="Plan my night" className="flex flex-col gap-8">
-      {/* Preference picker */}
-      <div className="hairline animate-rise rounded-2xl border bg-charcoal/50 p-5 sm:p-7">
-        <OptionRow label="Where">
-          {DESTINATIONS.map((d) => (
-            <Pill key={d} active={destination === d} onClick={() => setDestination(d)}>
-              {d}
-            </Pill>
-          ))}
-        </OptionRow>
-        <OptionRow label="The vibe">
-          {VIBES.map((v) => (
-            <Pill key={v.value} active={vibe === v.value} onClick={() => setVibe(v.value)}>
-              {v.label}
-            </Pill>
-          ))}
-        </OptionRow>
-        <OptionRow label="Who's coming">
-          {GROUPS.map((g) => (
-            <Pill key={g.value} active={group === g.value} onClick={() => setGroup(g.value)}>
-              {g.label}
-            </Pill>
-          ))}
-        </OptionRow>
-        <OptionRow label="Into" hint="pick any">
-          {INTERESTS.map((interest) => (
-            <Pill
-              key={interest}
-              active={interests.includes(interest)}
-              onClick={() => toggleInterest(interest)}
-            >
-              {interest}
-            </Pill>
-          ))}
-        </OptionRow>
-
-        <button
-          onClick={curate}
-          disabled={isLoading || interests.length === 0}
-          className="mt-6 w-full rounded-xl bg-gold py-3.5 text-xs font-bold uppercase tracking-[0.25em] text-ink transition-all hover:bg-gold-bright hover:shadow-[0_0_30px] hover:shadow-gold/25 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:px-10"
-        >
-          {isLoading ? "Curating…" : "Curate my night"}
-        </button>
-        {interests.length === 0 && (
-          <p className="mt-3 text-xs text-sand/70">Pick at least one interest.</p>
-        )}
-      </div>
-
-      {error && (
-        <div className="animate-rise rounded-xl border border-ember/30 bg-ember/10 px-4 py-3 text-sm text-ivory/90">
-          {error}
-        </div>
+    <div className="py-8">
+      {showComposer && (
+        <>
+          <h1 className="font-serif text-3xl italic">One perfect evening.</h1>
+          <p className="mt-3 max-w-[52ch] text-muted">
+            Tell the concierge the shape of your night and get a curated,
+            source-grounded itinerary across FIVE&apos;s venues.
+          </p>
+          <form
+            className="mt-10 space-y-8"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void curate();
+            }}
+          >
+            <ChoiceGroup
+              label="Destination"
+              options={DESTINATIONS}
+              value={destination}
+              onChange={setDestination}
+            />
+            <ChoiceGroup label="Vibe" options={VIBES} value={vibe} onChange={setVibe} />
+            <ChoiceGroup label="Going as" options={GROUPS} value={group} onChange={setGroup} />
+            <fieldset>
+              <legend className="text-xs font-medium tracking-[0.08em] text-faint uppercase">
+                Interests
+              </legend>
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                {INTERESTS.map((interest) => {
+                  const on = interests.includes(interest);
+                  return (
+                    <label
+                      key={interest}
+                      className={`${chipBase} cursor-pointer ${on ? chipOn : chipOff}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={on}
+                        onChange={() => toggleInterest(interest)}
+                        className="sr-only"
+                      />
+                      {interest}
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+            <div className="flex flex-wrap items-center gap-4 pt-2">
+              <button
+                type="submit"
+                disabled={interests.length === 0}
+                className="rounded-full bg-gold px-6 py-2.5 text-sm font-medium text-gold-ink transition-[background-color,opacity] duration-150 hover:bg-gold-hover disabled:cursor-default disabled:opacity-35"
+              >
+                Curate my evening
+              </button>
+              {interests.length === 0 && (
+                <p className="text-sm text-muted">Pick at least one interest.</p>
+              )}
+              {lastPlan && interests.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setItinerary(lastPlan.itinerary)}
+                  className="text-sm text-muted underline-offset-4 transition-colors duration-150 hover:text-ink hover:underline"
+                >
+                  Back to &ldquo;{lastPlan.itinerary.title}&rdquo;
+                </button>
+              )}
+            </div>
+          </form>
+          {error && (
+            <div className="mt-8 flex flex-wrap items-center gap-3 rounded-lg bg-danger-soft px-4 py-3 text-sm">
+              <span className="text-danger">{error}</span>
+              <button
+                type="button"
+                onClick={() => void curate()}
+                className="inline-flex items-center gap-1.5 font-medium text-ink underline-offset-4 hover:underline"
+              >
+                <RetryIcon className="size-3.5" />
+                Try again
+              </button>
+            </div>
+          )}
+        </>
       )}
 
-      {isLoading && <ItinerarySkeleton />}
-      {!isLoading && night && <ItineraryView night={night} />}
-    </section>
-  );
-}
+      <div aria-live="polite">
+        {pending && (
+          <div>
+            <p className="font-serif text-lg italic text-muted">
+              Curating your evening…
+            </p>
+            <div className="mt-8 space-y-8">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="flex gap-6">
+                  <div
+                    className="h-3.5 w-14 shrink-0 animate-pulse rounded bg-raised"
+                    style={{ animationDelay: `${i * 120}ms` }}
+                  />
+                  <div className="flex-1 space-y-2.5">
+                    <div
+                      className="h-3.5 w-2/5 animate-pulse rounded bg-raised"
+                      style={{ animationDelay: `${i * 120 + 60}ms` }}
+                    />
+                    <div
+                      className="h-3.5 w-4/5 animate-pulse rounded bg-raised"
+                      style={{ animationDelay: `${i * 120 + 120}ms` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-function OptionRow({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="mb-5 last:mb-0">
-      <p className="mb-2.5 text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-sand">
-        {label}
-        {hint && <span className="ml-2 normal-case tracking-normal text-sand/50">({hint})</span>}
-      </p>
-      <div className="flex flex-wrap gap-2">{children}</div>
-    </div>
-  );
-}
-
-function Pill({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      aria-pressed={active}
-      className={`rounded-full px-4 py-2 text-xs font-medium capitalize transition-all duration-200 ${
-        active
-          ? "bg-gold/15 text-gold-bright shadow-[inset_0_0_0_1px] shadow-gold/50"
-          : "hairline border bg-onyx/40 text-sand hover:text-ivory"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
-/** The generated evening, as an editorial timeline of cards. */
-function ItineraryView({ night }: { night: SavedNight }) {
-  const { itinerary, sources } = night;
-  return (
-    <div className="animate-rise-slow">
-      <header className="mb-8 text-center">
-        <p className="text-[0.65rem] font-semibold uppercase tracking-[0.4em] text-gold">
-          Your evening
-        </p>
-        <h2 className="mt-2 font-display text-3xl font-light italic text-ivory sm:text-4xl">
-          {itinerary.title}
-        </h2>
-        <p className="mx-auto mt-2 max-w-md text-sm text-sand">{itinerary.subtitle}</p>
-      </header>
-
-      <ol className="relative ml-3 space-y-6 border-l border-gold/20 pl-6 sm:ml-6 sm:pl-8">
-        {itinerary.stops.map((stop, i) => (
-          <li
-            key={i}
-            className="animate-rise relative"
-            style={{ animationDelay: `${i * 120}ms` }}
-          >
-            {/* Timeline node */}
-            <span
-              aria-hidden
-              className="absolute -left-[calc(1.5rem+5px)] top-7 h-2.5 w-2.5 rounded-full bg-gold shadow-[0_0_12px] shadow-gold/60 sm:-left-[calc(2rem+5px)]"
-            />
-            <article className="hairline rounded-2xl border bg-gradient-to-br from-charcoal to-night p-5 transition-colors hover:border-gold/40 sm:p-6">
-              <div className="flex items-baseline justify-between gap-3">
-                <p className="font-display text-sm font-semibold tracking-wide text-gold">
-                  {stop.time}
-                </p>
-                <p className="text-[0.6rem] font-semibold uppercase tracking-[0.25em] text-sand/70">
-                  {stop.category}
-                </p>
-              </div>
-              <h3 className="mt-2 font-display text-2xl font-medium text-ivory">
-                {stop.venue}
-              </h3>
-              <p className="mt-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-sand">
-                {stop.property}
+        {itinerary && (
+          <article>
+            <header>
+              <h1
+                ref={titleRef}
+                tabIndex={-1}
+                className="font-serif text-3xl italic outline-none"
+              >
+                {itinerary.title}
+              </h1>
+              <p className="mt-2 text-muted">{itinerary.subtitle}</p>
+              <p className="mt-4 text-xs tracking-[0.08em] text-faint uppercase">
+                {destination} · {vibe} · {group}
               </p>
-              <p className="mt-3 text-sm leading-relaxed text-ivory/85">{stop.blurb}</p>
-              {stop.source && <SourceLinks sources={[stop.source]} />}
-            </article>
-          </li>
-        ))}
-      </ol>
-
-      <footer className="mt-10 border-t border-gold/15 pt-5">
-        <SourceLinks sources={sources} />
-      </footer>
-    </div>
-  );
-}
-
-/** Loading state: shimmering placeholder cards while Gemini curates. */
-function ItinerarySkeleton() {
-  return (
-    <div aria-label="Curating your itinerary" role="status" className="space-y-6">
-      <div className="text-center">
-        <p className="animate-pulse font-display text-lg italic text-gold/70">
-          Composing your evening…
-        </p>
+            </header>
+            <ol className="mt-10">
+              {itinerary.stops.map((stop, i) => (
+                <li
+                  key={i}
+                  className="relative grid gap-x-6 gap-y-1 border-l border-hairline pt-0 pb-10 pl-6 last:pb-2 sm:grid-cols-[5.5rem_1fr] sm:pl-8"
+                >
+                  <span
+                    aria-hidden
+                    className="absolute top-1.5 -left-[3px] size-[5px] rounded-full bg-gold"
+                  />
+                  <time className="text-sm text-gold-text tabular-nums">
+                    {stop.time}
+                  </time>
+                  <div className="space-y-1.5">
+                    <h2 className="text-base font-medium">
+                      {stop.venue}
+                      <span className="ml-2 text-sm font-normal text-faint">
+                        {stop.property}
+                      </span>
+                    </h2>
+                    <p className="max-w-[60ch] text-sm leading-relaxed text-muted">
+                      {stop.blurb}
+                    </p>
+                    {stop.source && (
+                      <div className="pt-1">
+                        <SourceChips sources={[stop.source]} />
+                      </div>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ol>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => void copyPlan()}
+                className="rounded-full border border-hairline px-5 py-2.5 text-sm text-muted transition-colors duration-150 hover:border-hairline-strong hover:text-ink"
+              >
+                {copied ? "Copied" : "Copy plan"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setItinerary(null)}
+                className="rounded-full border border-hairline px-5 py-2.5 text-sm text-muted transition-colors duration-150 hover:border-hairline-strong hover:text-ink"
+              >
+                Plan another evening
+              </button>
+            </div>
+          </article>
+        )}
       </div>
-      {[0, 1, 2].map((i) => (
-        <div
-          key={i}
-          className="hairline animate-pulse rounded-2xl border bg-charcoal/50 p-6"
-          style={{ animationDelay: `${i * 200}ms` }}
-        >
-          <div className="h-3 w-16 rounded bg-gold/20" />
-          <div className="mt-3 h-6 w-2/5 rounded bg-ivory/10" />
-          <div className="mt-3 h-3 w-full rounded bg-ivory/5" />
-          <div className="mt-2 h-3 w-3/4 rounded bg-ivory/5" />
-        </div>
-      ))}
     </div>
   );
 }

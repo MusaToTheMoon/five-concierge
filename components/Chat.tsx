@@ -1,254 +1,272 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import SourceLinks from "./SourceLinks";
+import {
+  FormEvent,
+  KeyboardEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import type { ChatMessage } from "@/lib/types";
+import SourceChips from "./SourceChips";
+import { ArrowUpIcon, EraseIcon, RetryIcon } from "./icons";
 
-const STORAGE_KEY = "five-concierge-chat-v1";
+const STORAGE_KEY = "five-concierge-chat";
 
-const SUGGESTED_PROMPTS = [
-  "Dinner and a dancefloor in Dubai this Saturday?",
-  "Which FIVE restaurants are in the Michelin Guide?",
-  "What's the Pacha story at FIVE Ibiza?",
-  "Plan me a low-key spa day",
+const SUGGESTIONS = [
+  "What's the vibe at Bohemia beach club?",
+  "Where should we party in Dubai on a Friday night?",
+  "Tell me about the ReFIVE spa",
+  "What's happening at Destino FIVE in Ibiza?",
 ];
 
-/** Grounded concierge chat with localStorage persistence. */
+function greeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 5) return "Up late?";
+  if (hour < 12) return "Good morning.";
+  if (hour < 18) return "Good afternoon.";
+  return "Good evening.";
+}
+
+function loadHistory(): ChatMessage[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 export default function Chat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Restore the conversation once on mount. Reading localStorage in an
-  // effect (not a state initialiser) keeps server and first client render
-  // identical, avoiding a hydration mismatch.
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (saved) setMessages(JSON.parse(saved));
-    } catch {
-      /* corrupted storage, start fresh */
-    }
+    // localStorage is unavailable during SSR, so history must be seeded
+    // after mount; this is the standard hydration-safe pattern.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMessages(loadHistory());
     setHydrated(true);
   }, []);
 
-  // Persist after every exchange (skip until hydration to avoid wiping).
   useEffect(() => {
     if (!hydrated) return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
     } catch {
-      /* storage full or unavailable; chat still works in-memory */
+      /* storage full or private mode; history just won't persist */
     }
   }, [messages, hydrated]);
 
   useEffect(() => {
-    if (messages.length > 0 || isLoading) {
-      endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    // Don't yank the viewport if the user scrolled up to reread; only
+    // follow the thread when they're already near the bottom or just sent.
+    const doc = document.scrollingElement;
+    const nearBottom = doc
+      ? doc.scrollHeight - doc.scrollTop - doc.clientHeight < 400
+      : true;
+    if (pending || (messages.length > 0 && nearBottom)) {
+      endRef.current?.scrollIntoView({ block: "end" });
     }
-  }, [messages, isLoading]);
+  }, [messages, pending]);
 
   const send = useCallback(
-    async (text: string) => {
-      const content = text.trim();
-      if (!content || isLoading) return;
+    async (history: ChatMessage[]) => {
+      setPending(true);
       setError(null);
-      setInput("");
-      const next: ChatMessage[] = [...messages, { role: "user", content }];
-      setMessages(next);
-      setIsLoading(true);
       try {
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          // Sources aren't needed server-side; keep the payload lean.
-          body: JSON.stringify({
-            messages: next.map(({ role, content }) => ({ role, content })),
-          }),
+          body: JSON.stringify({ messages: history }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data?.error ?? "Request failed");
+        if (!res.ok) throw new Error(data?.error || "Something went wrong.");
         setMessages([
-          ...next,
-          { role: "assistant", content: data.reply, sources: data.sources },
+          ...history,
+          { role: "assistant", content: data.reply, sources: data.sources ?? [] },
         ]);
       } catch (err) {
         setError(
-          err instanceof Error && err.message !== "Failed to fetch"
+          err instanceof Error && err.message
             ? err.message
-            : "The concierge couldn't be reached. Check your connection and try again.",
+            : "The concierge couldn't be reached. Please try again.",
         );
       } finally {
-        setIsLoading(false);
+        setPending(false);
       }
     },
-    [messages, isLoading],
+    [],
   );
 
-  const clearChat = () => {
+  function submit(text: string) {
+    const content = text.trim();
+    if (!content || pending) return;
+    const next: ChatMessage[] = [...messages, { role: "user", content }];
+    setMessages(next);
+    setDraft("");
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
+    void send(next);
+  }
+
+  function onSubmit(event: FormEvent) {
+    event.preventDefault();
+    submit(draft);
+  }
+
+  function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      submit(draft);
+    }
+  }
+
+  function autoResize() {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  }
+
+  function clearConversation() {
+    if (!confirmClear) {
+      setConfirmClear(true);
+      window.setTimeout(() => setConfirmClear(false), 3500);
+      return;
+    }
     setMessages([]);
     setError(null);
-  };
+    setConfirmClear(false);
+  }
+
+  const empty = hydrated && messages.length === 0 && !pending;
 
   return (
-    <section aria-label="Concierge chat" className="flex flex-1 flex-col">
-      {/* Session header */}
-      <div className="flex items-center justify-between pb-4">
-        <p className="text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-sand">
-          At your service
-        </p>
-        {messages.length > 0 && (
-          <button
-            onClick={clearChat}
-            className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-sand transition-colors hover:text-gold"
-          >
-            New chat
-          </button>
-        )}
-      </div>
-
-      {/* Conversation */}
-      <div className="flex flex-1 flex-col gap-6">
-        {hydrated && messages.length === 0 && !isLoading && <EmptyState onPick={send} />}
-
-        {messages.map((message, i) =>
-          message.role === "user" ? (
-            <div key={i} className="animate-rise flex justify-end">
-              <p className="max-w-[85%] rounded-2xl rounded-br-md bg-gold/10 px-4 py-3 text-sm leading-relaxed text-ivory shadow-[inset_0_0_0_1px] shadow-gold/20 sm:max-w-[75%]">
-                {message.content}
-              </p>
-            </div>
-          ) : (
-            <div key={i} className="animate-rise max-w-full sm:max-w-[88%]">
-              <p className="mb-1.5 font-display text-xs font-semibold uppercase tracking-[0.25em] text-gold">
-                Concierge
-              </p>
-              <AssistantText content={message.content} />
-              <SourceLinks sources={message.sources ?? []} />
-            </div>
-          ),
-        )}
-
-        {isLoading && <TypingIndicator />}
-
-        {error && (
-          <div className="animate-rise rounded-xl border border-ember/30 bg-ember/10 px-4 py-3 text-sm text-ivory/90">
-            {error}
+    <div className="flex flex-1 flex-col">
+      <div className="flex-1">
+        {empty ? (
+          <div className="pt-14 sm:pt-20">
+            <h1 className="font-serif text-3xl italic">{greeting()}</h1>
+            <p className="mt-3 max-w-[52ch] text-muted">
+              Ask about FIVE&apos;s hotels, tables, parties and spa, across
+              Dubai, Zurich and Ibiza. Every answer cites the page it came
+              from.
+            </p>
+            <ul className="mt-10 border-t border-hairline">
+              {SUGGESTIONS.map((s) => (
+                <li key={s} className="border-b border-hairline">
+                  <button
+                    type="button"
+                    onClick={() => submit(s)}
+                    className="group flex w-full items-center justify-between gap-4 py-3.5 text-left text-sm text-muted transition-colors duration-150 hover:text-ink"
+                  >
+                    {s}
+                    <span className="text-faint transition-transform duration-200 ease-out-quart group-hover:translate-x-0.5 group-hover:text-gold-text">
+                      →
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
+        ) : (
+          <>
+            <h1 className="sr-only">Concierge chat</h1>
+            <ol className="space-y-8 py-8" aria-live="polite">
+            {messages.map((message, i) =>
+              message.role === "user" ? (
+                <li key={i} className="flex justify-end">
+                  <p className="max-w-[85%] rounded-2xl rounded-br-md bg-surface px-4 py-2.5 whitespace-pre-wrap">
+                    {message.content}
+                  </p>
+                </li>
+              ) : (
+                <li key={i} className="space-y-3">
+                  <p className="max-w-[68ch] leading-relaxed whitespace-pre-wrap">
+                    {message.content}
+                  </p>
+                  <SourceChips sources={message.sources ?? []} />
+                </li>
+              ),
+            )}
+            {pending && (
+              <li className="space-y-2.5">
+                <span className="sr-only">The concierge is writing.</span>
+                <div className="h-3.5 w-4/5 animate-pulse rounded bg-raised" />
+                <div className="h-3.5 w-3/5 animate-pulse rounded bg-raised [animation-delay:120ms]" />
+                <div className="h-3.5 w-2/5 animate-pulse rounded bg-raised [animation-delay:240ms]" />
+              </li>
+            )}
+            {error && (
+              <li className="flex flex-wrap items-center gap-3 rounded-lg bg-danger-soft px-4 py-3 text-sm">
+                <span className="text-danger">{error}</span>
+                <button
+                  type="button"
+                  onClick={() => void send(messages)}
+                  className="inline-flex items-center gap-1.5 font-medium text-ink underline-offset-4 hover:underline"
+                >
+                  <RetryIcon className="size-3.5" />
+                  Try again
+                </button>
+              </li>
+            )}
+            <div ref={endRef} className="scroll-mb-32" />
+            </ol>
+          </>
         )}
-        <div ref={endRef} />
       </div>
 
-      {/* Composer: sticky so it stays reachable in long conversations */}
-      <div className="sticky bottom-0 -mx-4 mt-8 bg-gradient-to-t from-night via-night/95 to-transparent px-4 pb-4 pt-6 sm:-mx-6 sm:px-6">
+      <div className="sticky bottom-0 bg-linear-to-t from-bg via-bg via-75% to-transparent pt-6 pb-4 sm:pb-6">
         <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            send(input);
-          }}
-          className="flex items-end gap-2 rounded-2xl border border-gold/30 bg-charcoal/90 p-2 backdrop-blur-md transition-colors focus-within:border-gold/60"
+          onSubmit={onSubmit}
+          className="flex items-end gap-2 rounded-2xl border border-hairline bg-surface p-2 transition-colors duration-150 focus-within:border-gold/45"
         >
           <textarea
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                send(input);
-              }
+            ref={textareaRef}
+            value={draft}
+            onChange={(e) => {
+              setDraft(e.target.value);
+              autoResize();
             }}
+            onKeyDown={onKeyDown}
             rows={1}
-            placeholder="Ask the concierge anything…"
-            aria-label="Message the concierge"
-            className="max-h-32 min-h-[2.5rem] flex-1 resize-none bg-transparent px-3 py-2 text-sm text-ivory placeholder:text-sand/60 focus:outline-none"
+            placeholder="Ask the concierge…"
+            aria-label="Ask the concierge"
+            className="max-h-40 flex-1 resize-none bg-transparent px-2.5 py-1.5 outline-none placeholder:text-faint"
           />
           <button
             type="submit"
-            disabled={!input.trim() || isLoading}
-            className="rounded-xl bg-gold px-4 py-2.5 text-xs font-bold uppercase tracking-[0.15em] text-ink transition-all hover:bg-gold-bright disabled:cursor-not-allowed disabled:opacity-40"
+            disabled={pending || draft.trim() === ""}
+            aria-label="Send"
+            className="grid size-10 shrink-0 place-items-center rounded-full bg-gold text-gold-ink transition-[background-color,opacity] duration-150 hover:bg-gold-hover disabled:cursor-default disabled:opacity-35"
           >
-            Send
+            <ArrowUpIcon />
           </button>
         </form>
-      </div>
-    </section>
-  );
-}
-
-/** Renders assistant prose: paragraphs and hyphen lists, markdown stripped. */
-function AssistantText({ content }: { content: string }) {
-  const blocks = content.replace(/\*\*?/g, "").split(/\n\n+/);
-  return (
-    <div className="space-y-3 text-sm leading-relaxed text-ivory/90">
-      {blocks.map((block, i) => {
-        const lines = block.split("\n");
-        const isList = lines.every((l) => /^\s*[-•]\s+/.test(l));
-        return isList ? (
-          <ul key={i} className="space-y-1.5">
-            {lines.map((line, j) => (
-              <li key={j} className="flex gap-2.5">
-                <span aria-hidden className="mt-[0.55em] h-1 w-1 shrink-0 rounded-full bg-gold" />
-                <span>{line.replace(/^\s*[-•]\s+/, "")}</span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p key={i} className="whitespace-pre-line">
-            {block}
-          </p>
-        );
-      })}
-    </div>
-  );
-}
-
-function TypingIndicator() {
-  return (
-    <div className="animate-rise flex items-center gap-3" role="status" aria-label="Concierge is typing">
-      <p className="font-display text-xs font-semibold uppercase tracking-[0.25em] text-gold">
-        Concierge
-      </p>
-      <span className="flex items-center gap-1.5">
-        {[0, 1, 2].map((i) => (
-          <span key={i} className="typing-dot h-1.5 w-1.5 rounded-full bg-gold" />
-        ))}
-      </span>
-    </div>
-  );
-}
-
-/** First-visit state: greeting + tasteful starter prompts. */
-function EmptyState({ onPick }: { onPick: (prompt: string) => void }) {
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-  return (
-    <div className="animate-rise flex flex-col items-start gap-6 py-6">
-      <div>
-        <p className="font-display text-2xl font-light italic text-ivory/90 sm:text-3xl">
-          {greeting}.
-        </p>
-        <p className="mt-2 max-w-md text-sm leading-relaxed text-sand">
-          Ask me about a table, a pool party, a treatment or a suite. I only
-          speak from FIVE&apos;s own pages, and I&apos;ll always show you the
-          exact one each answer came from.
-        </p>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {SUGGESTED_PROMPTS.map((prompt) => (
-          <button
-            key={prompt}
-            onClick={() => onPick(prompt)}
-            className="hairline rounded-full border bg-charcoal/60 px-4 py-2 text-left text-xs text-ivory/80 transition-all hover:border-gold/50 hover:bg-onyx hover:text-ivory"
-          >
-            {prompt}
-          </button>
-        ))}
+        {messages.length > 0 && (
+          <div className="mt-2 flex justify-end">
+            <button
+              type="button"
+              onClick={clearConversation}
+              className={`-m-2 inline-flex items-center gap-1.5 p-2 text-xs transition-colors duration-150 ${
+                confirmClear
+                  ? "text-danger"
+                  : "text-faint hover:text-muted"
+              }`}
+            >
+              <EraseIcon className="size-3.5" />
+              {confirmClear ? "Tap again to clear" : "Clear conversation"}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { Type } from "@google/genai";
 import { handleGeminiError } from "@/lib/api-errors";
 import { CHAT_MODEL, getGemini } from "@/lib/gemini";
+import { clientIp, isRateLimited, rateLimitedResponse } from "@/lib/rate-limit";
 import { formatContext, retrieve, toSources, type ScoredChunk } from "@/lib/retrieval";
 import type { Itinerary, ItineraryStop } from "@/lib/types";
 
@@ -98,6 +99,8 @@ async function gatherContext(prefs: Preferences): Promise<ScoredChunk[]> {
 }
 
 export async function POST(request: Request) {
+  if (await isRateLimited(`itinerary:${clientIp(request)}`)) return rateLimitedResponse();
+
   let prefs: Preferences | null = null;
   try {
     prefs = parsePreferences(await request.json());

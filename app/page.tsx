@@ -1,86 +1,122 @@
 "use client";
 
-import { useState } from "react";
+import { KeyboardEvent, useRef, useState } from "react";
 import Chat from "@/components/Chat";
 import PlanMyNight from "@/components/PlanMyNight";
+import ThemeToggle from "@/components/ThemeToggle";
 
-type Tab = "concierge" | "night";
+const MODES = [
+  { id: "chat", label: "Concierge" },
+  { id: "plan", label: "Plan My Night" },
+] as const;
 
-/**
- * Single-page shell: an editorial hero and the two experiences,
- * the grounded chat concierge and the Plan My Night itinerary builder.
- */
+type Mode = (typeof MODES)[number]["id"];
+
 export default function Home() {
-  const [tab, setTab] = useState<Tab>("concierge");
+  const [mode, setMode] = useState<Mode>("chat");
+  const tabRefs = useRef<Partial<Record<Mode, HTMLButtonElement | null>>>({});
+
+  /** Roving-tabindex arrow navigation, per the ARIA tabs pattern. */
+  function onTablistKeyDown(event: KeyboardEvent) {
+    const order = MODES.map((m) => m.id);
+    const current = order.indexOf(mode);
+    let next: Mode | null = null;
+    if (event.key === "ArrowRight") next = order[(current + 1) % order.length];
+    else if (event.key === "ArrowLeft")
+      next = order[(current - 1 + order.length) % order.length];
+    else if (event.key === "Home") next = order[0];
+    else if (event.key === "End") next = order[order.length - 1];
+    if (next) {
+      event.preventDefault();
+      setMode(next);
+      tabRefs.current[next]?.focus();
+    }
+  }
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 sm:px-6">
-      {/* Hero */}
-      <section className="animate-rise-slow pt-10 pb-8 sm:pt-14">
-        <p className="text-[0.65rem] font-semibold uppercase tracking-[0.4em] text-gold">
-          Your insider at FIVE
-        </p>
-        <h1 className="mt-3 font-display text-4xl font-light leading-[1.05] text-ivory sm:text-6xl">
-          Dinner, the dancefloor, and the
-          <span className="font-medium italic text-gold-bright"> spa that fixes it.</span>
-        </h1>
-        <p className="mt-4 max-w-xl text-sm leading-relaxed text-sand sm:text-base">
-          Ask about the restaurants, the pool parties, the treatments, the
-          suites. Every answer links straight to the FIVE page it came from,
-          and it will never invent a price or a booking. Or tap Plan My Night
-          and get a full evening mapped across FIVE&apos;s venues.
-        </p>
-      </section>
-
-      {/* Tab switcher */}
-      <div
-        role="tablist"
-        aria-label="Concierge modes"
-        className="hairline flex w-fit items-center gap-1 rounded-full border bg-charcoal/60 p-1"
-      >
-        <TabButton
-          active={tab === "concierge"}
-          onClick={() => setTab("concierge")}
-        >
-          Ask the Concierge
-        </TabButton>
-        <TabButton active={tab === "night"} onClick={() => setTab("night")}>
-          Plan My Night
-        </TabButton>
-      </div>
-
-      {/* Active experience: keep Chat mounted so the thread survives tab hops */}
-      <div className="flex flex-1 flex-col pt-6 pb-10">
-        <div className={tab === "concierge" ? "flex flex-1 flex-col" : "hidden"}>
-          <Chat />
+    <div className="flex min-h-dvh flex-col">
+      <header className="sticky top-0 z-10 border-b border-hairline bg-bg">
+        <div className="mx-auto flex h-14 w-full max-w-2xl items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6">
+          <p className="text-sm font-semibold tracking-[0.14em]">FIVE</p>
+          <nav
+            role="tablist"
+            aria-label="Concierge modes"
+            className="flex gap-1"
+            onKeyDown={onTablistKeyDown}
+          >
+            {MODES.map((m) => {
+              const active = mode === m.id;
+              return (
+                <button
+                  key={m.id}
+                  ref={(el) => {
+                    tabRefs.current[m.id] = el;
+                  }}
+                  role="tab"
+                  id={`tab-${m.id}`}
+                  aria-selected={active}
+                  aria-controls={`panel-${m.id}`}
+                  tabIndex={active ? 0 : -1}
+                  onClick={() => setMode(m.id)}
+                  className={`relative rounded-md px-2 py-2 text-sm whitespace-nowrap transition-colors duration-150 sm:px-3 ${
+                    active ? "text-ink" : "text-muted hover:text-ink"
+                  }`}
+                >
+                  {m.label}
+                  <span
+                    aria-hidden
+                    className={`absolute inset-x-3 bottom-0 block h-px transition-colors duration-150 ${
+                      active ? "bg-gold" : "bg-transparent"
+                    }`}
+                  />
+                </button>
+              );
+            })}
+          </nav>
+          <ThemeToggle />
         </div>
-        {tab === "night" && <PlanMyNight />}
-      </div>
-    </div>
-  );
-}
+      </header>
 
-function TabButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      role="tab"
-      aria-selected={active}
-      onClick={onClick}
-      className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] transition-all duration-300 sm:px-5 ${
-        active
-          ? "bg-gold/15 text-gold-bright shadow-[inset_0_0_0_1px] shadow-gold/30"
-          : "text-sand hover:text-ivory"
-      }`}
-    >
-      {children}
-    </button>
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-5 sm:px-6">
+        <section
+          role="tabpanel"
+          id="panel-chat"
+          aria-labelledby="tab-chat"
+          hidden={mode !== "chat"}
+          className={mode === "chat" ? "flex flex-1 flex-col" : undefined}
+        >
+          <Chat />
+        </section>
+        <section
+          role="tabpanel"
+          id="panel-plan"
+          aria-labelledby="tab-plan"
+          hidden={mode !== "plan"}
+        >
+          <PlanMyNight />
+        </section>
+      </main>
+
+      <footer className="border-t border-hairline">
+        <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-1 px-4 py-5 text-center sm:px-6">
+          <p className="text-xs text-faint">
+            Unofficial demo and portfolio project. Not affiliated with FIVE
+            Hotels and Resorts.
+          </p>
+          <p className="text-xs text-faint/70">
+            Content sourced from{" "}
+            <a
+              href="https://www.fivehotelsandresorts.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline decoration-gold-text/40 underline-offset-2 transition-colors hover:text-gold-text"
+            >
+              fivehotelsandresorts.com
+            </a>
+            . Always confirm details with the hotel.
+          </p>
+        </div>
+      </footer>
+    </div>
   );
 }

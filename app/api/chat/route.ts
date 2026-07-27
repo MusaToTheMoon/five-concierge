@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { Type } from "@google/genai";
 import { handleGeminiError } from "@/lib/api-errors";
 import { CHAT_MODEL, getGemini } from "@/lib/gemini";
+import { clientIp, isRateLimited, rateLimitedResponse } from "@/lib/rate-limit";
 import { formatContext, retrieve, toSources } from "@/lib/retrieval";
 import type { ChatMessage } from "@/lib/types";
 
@@ -32,6 +33,8 @@ const NO_INFO_REPLY =
   "That's not something I have reliable information on, I'm afraid, and I'd rather not guess. For the definitive answer, check fivehotelsandresorts.com or reach out to the property team directly; they'll take care of you.";
 
 export async function POST(request: Request) {
+  if (await isRateLimited(`chat:${clientIp(request)}`)) return rateLimitedResponse();
+
   let messages: ChatMessage[];
   try {
     const body = await request.json();

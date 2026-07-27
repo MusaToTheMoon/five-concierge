@@ -1,67 +1,58 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Manrope } from "next/font/google";
+import { Instrument_Sans, Instrument_Serif } from "next/font/google";
 import "./globals.css";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 
-/*
- * Type pairing: Fraunces (editorial display serif, optical sizing on) against
- * Manrope (refined grotesque) for body and UI. High contrast on purpose:
- * thin oversized serif headlines, small tracked-out sans labels.
- */
-const fraunces = Fraunces({
+const instrumentSans = Instrument_Sans({
+  variable: "--font-instrument-sans",
   subsets: ["latin"],
-  axes: ["opsz", "SOFT", "WONK"],
-  variable: "--font-fraunces",
 });
 
-const manrope = Manrope({
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-instrument-serif",
   subsets: ["latin"],
-  variable: "--font-manrope",
+  weight: "400",
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
   title: "FIVE Concierge",
   description:
-    "An AI concierge for FIVE Hotels and Resorts, with grounded answers about the hotels, dining, nightlife and spa, plus personalised evening itineraries. Unofficial portfolio demo.",
+    "The AI guest concierge for FIVE Hotels and Resorts. Grounded answers with cited sources, and a curated plan for your evening.",
 };
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#0b0906" },
-    { media: "(prefers-color-scheme: light)", color: "#f4f0e6" },
+    { media: "(prefers-color-scheme: dark)", color: "#1b1b1b" },
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
   ],
 };
 
-/*
- * Sets the stored (or OS-preferred) theme on <html> before first paint, so a
- * returning light-mode guest never sees a dark flash. Kept tiny and inline.
+/**
+ * Applies the stored theme before first paint so neither scene
+ * flashes into the other. Dark is the house default.
  */
-const THEME_INIT = `(function(){try{var d=document.documentElement,s=localStorage.getItem('five-theme');if(s!=='light'&&s!=='dark'){s=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}d.dataset.theme=s;}catch(e){}})();`;
+const themeInit = `(function () {
+  try {
+    var t = localStorage.getItem("five-theme");
+    if (t !== "light" && t !== "dark") {
+      t = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+    }
+    document.documentElement.dataset.theme = t;
+  } catch (e) {
+    document.documentElement.dataset.theme = "dark";
+  }
+})();`;
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html
-      lang="en"
-      // The inline theme script sets data-theme before hydration; this scopes
-      // the expected attribute mismatch to <html> only.
-      suppressHydrationWarning
-      className={`${fraunces.variable} ${manrope.variable} h-full antialiased`}
-    >
-      <body className="relative flex min-h-dvh flex-col overflow-x-hidden">
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
-        {/* Ambient gold glow, fixed behind everything */}
-        <div
-          aria-hidden
-          className="pointer-events-none fixed -top-40 left-1/2 -z-10 h-[32rem] w-[52rem] -translate-x-1/2 rounded-full bg-gold/[0.07] blur-[120px] animate-glow-drift"
-        />
-        <Header />
-        <main className="flex w-full flex-1 flex-col">{children}</main>
-        <Footer />
+    <html lang="en" data-theme="dark" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInit }} />
+      </head>
+      <body className={`${instrumentSans.variable} ${instrumentSerif.variable}`}>
+        {children}
       </body>
     </html>
   );
