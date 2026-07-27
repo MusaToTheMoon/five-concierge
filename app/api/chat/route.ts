@@ -33,7 +33,7 @@ const NO_INFO_REPLY =
   "That's not something I have reliable information on, I'm afraid, and I'd rather not guess. For the definitive answer, check fivehotelsandresorts.com or reach out to the property team directly; they'll take care of you.";
 
 export async function POST(request: Request) {
-  if (isRateLimited(`chat:${clientIp(request)}`)) return rateLimitedResponse();
+  if (await isRateLimited(`chat:${clientIp(request)}`)) return rateLimitedResponse();
 
   let messages: ChatMessage[];
   try {

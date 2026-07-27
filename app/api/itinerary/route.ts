@@ -99,7 +99,7 @@ async function gatherContext(prefs: Preferences): Promise<ScoredChunk[]> {
 }
 
 export async function POST(request: Request) {
-  if (isRateLimited(`itinerary:${clientIp(request)}`)) return rateLimitedResponse();
+  if (await isRateLimited(`itinerary:${clientIp(request)}`)) return rateLimitedResponse();
 
   let prefs: Preferences | null = null;
   try {
