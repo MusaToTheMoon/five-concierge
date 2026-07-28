@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ipAddress } from "@vercel/functions";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
@@ -52,9 +53,16 @@ function getRatelimit(): Ratelimit {
   return ratelimit;
 }
 
-/** First hop of x-forwarded-for; Vercel sets it to the real client IP. */
+/**
+ * Real client IP as Vercel's edge saw it.
+ *
+ * `ipAddress()` reads Vercel's trusted `x-vercel-forwarded-for`, which the
+ * platform signs and a client cannot forge. Parsing raw `x-forwarded-for`
+ * instead let a caller prepend their own value and either rotate past the
+ * limit or poison another visitor's bucket.
+ */
 export function clientIp(request: Request): string {
-  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  return ipAddress(request) ?? "unknown";
 }
 
 /** Records a hit for `key` and reports whether it is over the limit. */
