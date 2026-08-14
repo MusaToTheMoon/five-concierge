@@ -25,7 +25,11 @@ export function getGemini(): GoogleGenAI {
   return client;
 }
 
-function l2Normalize(vector: number[]): number[] {
+/**
+ * Scales a vector to unit length. Exported so the renormalization that makes
+ * truncated embeddings comparable is directly testable.
+ */
+export function l2Normalize(vector: number[]): number[] {
   const norm = Math.hypot(...vector);
   return norm === 0 ? vector : vector.map((v) => v / norm);
 }
