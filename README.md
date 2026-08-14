@@ -39,6 +39,39 @@ npm run dev                  # http://localhost:3000
 Get a free Gemini API key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
 The free tier is enough for both ingestion and chat.
 
+## Tests
+
+```bash
+npm test              # run the suite once
+npm run test:watch    # re-run on change
+npm run test:coverage # run with a coverage report
+npm run typecheck     # tsc --noEmit
+npm run lint
+```
+
+The suite needs no API keys, no Redis and no network: Gemini and Upstash are
+mocked at the module boundary. It also does not need `data/embeddings.json`,
+which is gitignored and rebuilt by `npm run ingest`. Retrieval tests read a
+committed fixture (`tests/fixtures/embeddings.ts`) served through a `node:fs`
+mock, so the real scoring, filtering and sorting stay under test while the
+similarity scores remain exact and readable.
+
+48 tests, roughly 0.7s wall clock. Coverage of `lib/` and `app/api/`:
+
+| File | Stmts | Branch | Funcs | Lines |
+| --- | --- | --- | --- | --- |
+| All files | 98.86% | 89.32% | 100% | 98.86% |
+| `app/api/chat/route.ts` | 100% | 93.10% | 100% | 100% |
+| `app/api/itinerary/route.ts` | 96.74% | 80.64% | 100% | 96.74% |
+| `lib/api-errors.ts` | 100% | 83.33% | 100% | 100% |
+| `lib/gemini.ts` | 100% | 84.61% | 100% | 100% |
+| `lib/rate-limit.ts` | 100% | 100% | 100% | 100% |
+| `lib/retrieval.ts` | 100% | 100% | 100% | 100% |
+
+`lib/types.ts` is excluded: it declares interfaces only and compiles to no
+runtime code. There is no coverage threshold gate; the number above is
+reported, not targeted.
+
 ## Adding or editing content
 
 The knowledge base is plain markdown in [`content/`](content/). Each file
