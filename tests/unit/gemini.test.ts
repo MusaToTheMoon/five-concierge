@@ -78,4 +78,14 @@ describe("lib/gemini", () => {
       "Expected 2 embeddings, got 1",
     );
   });
+
+  it("getGemini throws when GEMINI_API_KEY is unset", async () => {
+    delete process.env.GEMINI_API_KEY;
+    vi.resetModules();
+    const { getGemini } = await import("@/lib/gemini");
+
+    expect(() => getGemini()).toThrow(
+      "GEMINI_API_KEY is not set. Add it to .env.local (see .env.example).",
+    );
+  });
 });
