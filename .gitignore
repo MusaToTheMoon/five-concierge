@@ -18,6 +18,11 @@ screenshot-*.png
 # testing
 /coverage
 
+# local scratch and working notes
+/.superpowers
+/docs/PROGRESS.md
+/docs/plans/
+
 # next.js
 /.next/
 /out/
