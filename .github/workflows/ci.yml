@@ -1,0 +1,63 @@
+name: CI
+
+# Runs on every push and on every pull request targeting main. The pull_request
+# trigger is the one that gates merges: make "CI / verify" a required status
+# check in the branch protection rules for main and GitHub will refuse the
+# merge button while it is failing. See .github/BRANCH_PROTECTION.md.
+on:
+  push:
+  pull_request:
+    branches: [main]
+
+# A second push to the same branch makes the earlier run pointless, so cancel
+# it rather than pay for both. In-progress runs on main are left alone.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+# The workflow only reads the repository. Nothing here publishes, comments or
+# deploys, so it gets no write scopes.
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: verify
+    runs-on: ubuntu-latest
+    # The whole pipeline is install plus three short checks. If it has not
+    # finished well inside this, something is wrong rather than slow.
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          # Next 16 requires >= 20.9. 24 is the current LTS and matches the
+          # default the Vercel runtime uses for this project.
+          node-version: 24
+          # Keyed on package-lock.json, so the cache only misses when
+          # dependencies actually change.
+          cache: npm
+
+      - name: Install dependencies
+        # `npm ci` installs exactly what the lockfile pins and fails if
+        # package.json and package-lock.json have drifted apart.
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        # Warnings fail the build. The tree is clean at zero warnings today,
+        # so letting them accumulate silently is the only way that changes.
+        run: npm run lint -- --max-warnings 0
+
+      - name: Test
+        # No secrets are provided on purpose. The suite mocks Gemini, Upstash
+        # and the filesystem, and it must never depend on a real key, a real
+        # Redis, or on data/embeddings.json, which is gitignored and absent
+        # from a fresh checkout.
+        run: npm run test:coverage
