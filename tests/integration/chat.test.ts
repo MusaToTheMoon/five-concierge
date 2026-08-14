@@ -83,6 +83,7 @@ describe("POST /api/chat", () => {
       { title: "Dining at FIVE", url: "https://fivehotelsandresorts.com/dining" },
       { title: "Nightlife at FIVE", url: "https://fivehotelsandresorts.com/nightlife" },
     ]);
+    expect(limitMock).toHaveBeenCalledWith("chat:1.2.3.4");
   });
 
   it("declines with the no-info reply and empty sources when nothing is retrieved, without calling Gemini", async () => {

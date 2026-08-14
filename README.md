@@ -56,7 +56,7 @@ committed fixture (`tests/fixtures/embeddings.ts`) served through a `node:fs`
 mock, so the real scoring, filtering and sorting stay under test while the
 similarity scores remain exact and readable.
 
-47 tests, roughly 0.7s wall clock. Coverage of `lib/` and `app/api/`:
+48 tests, roughly 0.7s wall clock. Coverage of `lib/` and `app/api/`:
 
 | File | Stmts | Branch | Funcs | Lines |
 | --- | --- | --- | --- | --- |

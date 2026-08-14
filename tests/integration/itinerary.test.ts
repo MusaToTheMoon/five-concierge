@@ -109,6 +109,7 @@ describe("POST /api/itinerary", () => {
       title: "Dining at FIVE",
       url: "https://fivehotelsandresorts.com/dining",
     });
+    expect(limitMock).toHaveBeenCalledWith("itinerary:1.2.3.4");
   });
 
   it("resolves an out-of-range source_index to source: null instead of throwing", async () => {

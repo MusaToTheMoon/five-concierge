@@ -65,7 +65,6 @@ describe("lib/gemini", () => {
     const result = l2Normalize([0, 0, 0]);
 
     expect(result).toEqual([0, 0, 0]);
-    expect(result.some((v) => Number.isNaN(v))).toBe(false);
   });
 
   it("embedTexts throws when the API returns a different embedding count than requested", async () => {

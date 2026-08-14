@@ -18,6 +18,7 @@ const state = vi.hoisted(() => ({
   limitImpl: async (_key: string): Promise<{ success: boolean }> => ({
     success: true,
   }),
+  ratelimitConfig: null as unknown,
 }));
 
 vi.mock("@vercel/functions", () => ({
@@ -35,7 +36,9 @@ vi.mock("@upstash/ratelimit", () => {
     static slidingWindow(limit: number, window: string) {
       return { limit, window };
     }
-    constructor(_config: unknown) {}
+    constructor(config: unknown) {
+      state.ratelimitConfig = config;
+    }
     limit(key: string) {
       return state.limitImpl(key);
     }
@@ -52,6 +55,7 @@ async function loadRateLimit() {
 beforeEach(() => {
   state.ipAddressImpl = () => undefined;
   state.limitImpl = async () => ({ success: true });
+  state.ratelimitConfig = null;
 });
 
 describe("clientIp", () => {
@@ -130,14 +134,21 @@ describe("isRateLimited", () => {
     consoleErrorSpy.mockRestore();
   });
 
-  it("resolves exactly 10 of 15 concurrent calls as allowed and 5 as limited, with the shared counter ending at 15", async () => {
+  it("does not memoize, batch, dedupe or short-circuit concurrent in-flight calls for the same key: isRateLimited reports one limiter verdict per call", async () => {
+    // This test establishes only that isRateLimited calls through to the
+    // (mocked) limiter once per invocation, with no memoization, batching,
+    // deduplication or short-circuiting of concurrent in-flight calls sharing
+    // a key: each of the 15 concurrent callers gets the verdict computed for
+    // its own call. It does NOT establish that the real limiter is atomic
+    // under concurrency. JavaScript is single-threaded, and this mock's
+    // counter increment happens before its only await, so no interleaving
+    // between callers is possible here regardless of what isRateLimited
+    // does; the counter, the increment and the cutoff all live in this
+    // test's own mock, not in the code under test. Real sliding-window
+    // atomicity lives in Upstash's Lua script running inside Redis, which
+    // this unit test mocks away entirely and therefore cannot exercise.
     let counter = 0;
     state.limitImpl = async () => {
-      // The increment and the allow/deny decision happen before the only
-      // await in this function, so every concurrent caller that reaches this
-      // line reads and updates the counter with no other caller interleaved
-      // in between. If two callers could both read a stale count, this test
-      // would see fewer than 5 limited or a final counter below 15.
       counter += 1;
       const success = counter <= 10;
       await Promise.resolve();
@@ -176,6 +187,28 @@ describe("isRateLimited", () => {
   });
 });
 
+describe("getRatelimit configuration", () => {
+  it("builds the limiter via Ratelimit.slidingWindow with exactly 10 requests and window \"1 m\", prefix \"ratelimit\", analytics false, and an ephemeralCache", async () => {
+    const { isRateLimited } = await loadRateLimit();
+
+    // getRatelimit() builds lazily on first use, so the constructor only
+    // runs once isRateLimited() is called.
+    await isRateLimited("chat:1.1.1.1");
+
+    const config = state.ratelimitConfig as {
+      limiter: { limit: number; window: string };
+      prefix: string;
+      analytics: boolean;
+      ephemeralCache: unknown;
+    };
+
+    expect(config.limiter).toEqual({ limit: 10, window: "1 m" });
+    expect(config.prefix).toBe("ratelimit");
+    expect(config.analytics).toBe(false);
+    expect(config.ephemeralCache).toBeInstanceOf(Map);
+  });
+});
+
 describe("rateLimitedResponse", () => {
   it("returns a 429 with a Retry-After: 60 header", async () => {
     const { rateLimitedResponse } = await loadRateLimit();
@@ -186,13 +219,14 @@ describe("rateLimitedResponse", () => {
     expect(response.headers.get("Retry-After")).toBe("60");
   });
 
-  it("returns a JSON body with an error message", async () => {
+  it("returns a JSON body with the exact rate-limited copy", async () => {
     const { rateLimitedResponse } = await loadRateLimit();
 
     const response = rateLimitedResponse();
     const body = await response.json();
 
-    expect(typeof body.error).toBe("string");
-    expect(body.error.length).toBeGreaterThan(0);
+    expect(body.error).toBe(
+      "You're moving faster than the desk can keep up. Give it a moment and try again.",
+    );
   });
 });
