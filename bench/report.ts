@@ -12,6 +12,7 @@ import path from "node:path";
 import { CHAT_MODEL, EMBEDDING_MODEL } from "../lib/gemini";
 import { readCorpusInfo } from "./support/corpus";
 import { readResult } from "./support/results";
+import { tallyFailures, type FailureCategory } from "./support/failures";
 import type { FullStats, LiveStats } from "./support/stats";
 
 interface Environment {
@@ -39,7 +40,7 @@ interface TierBResult {
   apiCalls: { embedAttempted: number; generateAttempted: number; total: number; failed: number };
   embed: LiveStats & { raw: number[] };
   generate: LiveStats & { raw: number[] };
-  failures: { embed: string[]; generate: string[] };
+  failures: { embed: FailureCategory[]; generate: FailureCategory[] };
 }
 
 interface LevelResult {
@@ -65,28 +66,17 @@ function fmt(n: number, digits = 2): string {
 }
 
 /**
- * Turns provider failure messages into published-safe rows.
+ * Renders already-classified failures as table rows.
  *
- * The verbatim message is deliberately dropped: it can carry a request URL, a
- * project identifier or a credential, and this report is committed. Failures
- * are grouped into the same coarse categories the API layer already uses, so
- * the document still says what went wrong without saying it in the provider's
- * own words. Full messages remain in the gitignored results JSON.
+ * No redaction happens here. Categories are assigned at capture time in
+ * bench/support/failures.ts and the verbatim provider message is never
+ * written to disk, so by the time a result file reaches this generator there
+ * is nothing sensitive left to strip.
  */
-function summarizeFailures(messages: string[]): string {
-  if (messages.length === 0) return "| (none) | 0 |";
-  const counts = new Map<string, number>();
-  for (const message of messages) {
-    const kind = /RESOURCE_EXHAUSTED|429/.test(message)
-      ? "provider rate limit"
-      : /GEMINI_API_KEY|API key|PERMISSION_DENIED|401|403/.test(message)
-        ? "authentication or configuration"
-        : "other";
-    counts.set(kind, (counts.get(kind) ?? 0) + 1);
-  }
-  return [...counts]
-    .sort((a, b) => b[1] - a[1])
-    .map(([kind, count]) => `| ${kind} | ${count} |`)
+function summarizeFailures(categories: FailureCategory[]): string {
+  if (categories.length === 0) return "| (none) | 0 |";
+  return tallyFailures(categories)
+    .map(([category, count]) => `| ${category} | ${count} |`)
     .join("\n");
 }
 
@@ -116,11 +106,6 @@ function main(): void {
 
   const embedRawRows = tierB.embed.raw.map((ms, i) => `| ${i + 1} | ${fmt(ms)} |`).join("\n");
   const generateRawRows = tierB.generate.raw.map((ms, i) => `| ${i + 1} | ${fmt(ms)} |`).join("\n");
-  // Provider error text is never rendered into this committed file. A failure
-  // message can carry a request URL, a project identifier, or a credential,
-  // and this document goes into git. Only the classification and the count are
-  // safe to publish; the verbatim messages stay in the gitignored
-  // bench/results/live.json for local debugging.
   const embedFailureRows = summarizeFailures(tierB.failures.embed);
   const generateFailureRows = summarizeFailures(tierB.failures.generate);
 

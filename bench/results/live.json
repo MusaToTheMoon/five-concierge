@@ -1,0 +1,82 @@
+{
+  "tier": "B",
+  "description": "Live calibration against the real Gemini API: real embedContent and real generateContent calls, run sequentially with a pause between calls so a burst does not just collect provider 429s. This is the only tier that spends Google API quota, and it is the calibration source for Tier C.",
+  "provenance": "RECONSTRUCTED, not freshly measured. The original file was lost when the task-4 worktree was removed after merge, since bench/results/ is gitignored and lived inside it. Every latency value below was recovered verbatim from the raw sample tables committed in docs/BENCHMARKS.md, so the numbers are the real 2026-08-15 measurements. Two things could not be recovered: the verbatim provider error strings, which were deliberately never committed because they can carry a request URL or credential, and the environment block, which is unused by the report. Re-run `npm run bench:live` if you want a file with first-hand provenance. Failure entries are categories under the new capture-time classification; the original run predated it and its verbatim messages were never committed.",
+  "measuredAt": "2026-08-15T06:31:46.801Z",
+  "touchedGoogleApi": true,
+  "config": {
+    "samples": 20,
+    "pauseMs": 6500,
+    "chatModel": "gemini-2.5-flash",
+    "embeddingModel": "gemini-embedding-001"
+  },
+  "apiCalls": {
+    "embedAttempted": 20,
+    "generateAttempted": 20,
+    "total": 40,
+    "failed": 4
+  },
+  "embed": {
+    "n": 20,
+    "min": 754.31,
+    "max": 1047.59,
+    "mean": 803.87,
+    "median": 770.28,
+    "raw": [
+      1047.59,
+      763.94,
+      791.98,
+      792.59,
+      924.18,
+      783.37,
+      759.4,
+      764.05,
+      769.09,
+      760.55,
+      765.5,
+      771.46,
+      756.66,
+      765.64,
+      774.26,
+      754.31,
+      758.1,
+      771.85,
+      925.16,
+      877.69
+    ]
+  },
+  "generate": {
+    "n": 16,
+    "min": 782.91,
+    "max": 1517.89,
+    "mean": 1254.15,
+    "median": 1266.8,
+    "raw": [
+      782.91,
+      1164.04,
+      1239.51,
+      1321.07,
+      1244.11,
+      1265.83,
+      1267.77,
+      1517.89,
+      1299.02,
+      1366.72,
+      1289.76,
+      1214.6,
+      1244.06,
+      1282.01,
+      1343.9,
+      1223.2
+    ]
+  },
+  "failures": {
+    "embed": [],
+    "generate": [
+      "provider rate limit",
+      "provider rate limit",
+      "provider rate limit",
+      "provider rate limit"
+    ]
+  }
+}

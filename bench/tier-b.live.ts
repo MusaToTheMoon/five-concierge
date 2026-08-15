@@ -18,6 +18,7 @@ import path from "node:path";
 import { Type } from "@google/genai";
 import { CHAT_MODEL, EMBEDDING_MODEL, embedTexts, getGemini } from "../lib/gemini";
 import { collectEnvironment } from "./support/environment";
+import { classifyFailure, type FailureCategory } from "./support/failures";
 import { summarizeLive } from "./support/stats";
 import { writeResult } from "./support/results";
 
@@ -63,17 +64,19 @@ async function timeCall<T>(fn: () => Promise<T>): Promise<number> {
 
 interface SampleRun {
   raw: number[];
-  failures: string[];
+  failures: FailureCategory[];
 }
 
 async function runEmbedSamples(): Promise<SampleRun> {
   const raw: number[] = [];
-  const failures: string[] = [];
+  const failures: FailureCategory[] = [];
   for (let i = 0; i < SAMPLES; i++) {
     try {
       raw.push(await timeCall(() => embedTexts([SAMPLE_QUERY], "RETRIEVAL_QUERY")));
     } catch (error) {
-      failures.push(error instanceof Error ? error.message : String(error));
+      // Classified immediately and the message dropped: it can carry a
+      // request URL or a credential, and this result file is committed.
+      failures.push(classifyFailure(error));
     }
     if (i < SAMPLES - 1) await sleep(PAUSE_MS);
   }
@@ -82,7 +85,7 @@ async function runEmbedSamples(): Promise<SampleRun> {
 
 async function runGenerateSamples(): Promise<SampleRun> {
   const raw: number[] = [];
-  const failures: string[] = [];
+  const failures: FailureCategory[] = [];
   for (let i = 0; i < SAMPLES; i++) {
     try {
       raw.push(
@@ -113,7 +116,9 @@ async function runGenerateSamples(): Promise<SampleRun> {
         ),
       );
     } catch (error) {
-      failures.push(error instanceof Error ? error.message : String(error));
+      // Classified immediately and the message dropped: it can carry a
+      // request URL or a credential, and this result file is committed.
+      failures.push(classifyFailure(error));
     }
     if (i < SAMPLES - 1) await sleep(PAUSE_MS);
   }
