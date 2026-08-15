@@ -1,0 +1,261 @@
+/**
+ * Generates docs/BENCHMARKS.md from the measured result files under
+ * bench/results/. Every figure it writes comes from a real result file;
+ * this script does not measure, estimate or invent anything itself, except
+ * corpus size and model identifiers, which it reads live from the real
+ * store and from lib/gemini.ts so they cannot drift out of date.
+ *
+ * Run with: npm run bench:report
+ */
+import fs from "node:fs";
+import path from "node:path";
+import { CHAT_MODEL, EMBEDDING_MODEL } from "../lib/gemini";
+import { readCorpusInfo } from "./support/corpus";
+import { readResult } from "./support/results";
+import type { FullStats, LiveStats } from "./support/stats";
+
+interface Environment {
+  node: string;
+  npm: string;
+  os: { platform: string; release: string; arch: string };
+  cpu: { model: string; cores: number };
+  memoryBytes: number;
+  packages: Record<string, string>;
+}
+
+interface TierAResult {
+  description: string;
+  measuredAt: string;
+  environment: Environment;
+  config: { iterations: number; warmup: number };
+  stats: FullStats;
+  opsPerSecond: number;
+}
+
+interface TierBResult {
+  description: string;
+  measuredAt: string;
+  config: { samples: number; pauseMs: number; chatModel: string; embeddingModel: string };
+  apiCalls: { embedAttempted: number; generateAttempted: number; total: number; failed: number };
+  embed: LiveStats & { raw: number[] };
+  generate: LiveStats & { raw: number[] };
+  failures: { embed: string[]; generate: string[] };
+}
+
+interface LevelResult {
+  concurrency: number;
+  requests: number;
+  errors: number;
+  stats: FullStats;
+  requestsPerSecond: number;
+}
+
+interface TierCResult {
+  description: string;
+  measuredAt: string;
+  calibration: { sourceFile: string; embedMedianMs: number; generateMedianMs: number };
+  rateLimiter: { windowSeconds: number; maxRequestsPerWindow: number; note: string };
+  measurementNotes: string[];
+  config: { concurrencyLevels: readonly number[]; requestsPerLevel: number };
+  levels: LevelResult[];
+}
+
+function fmt(n: number, digits = 2): string {
+  return n.toFixed(digits);
+}
+
+/**
+ * Turns provider failure messages into published-safe rows.
+ *
+ * The verbatim message is deliberately dropped: it can carry a request URL, a
+ * project identifier or a credential, and this report is committed. Failures
+ * are grouped into the same coarse categories the API layer already uses, so
+ * the document still says what went wrong without saying it in the provider's
+ * own words. Full messages remain in the gitignored results JSON.
+ */
+function summarizeFailures(messages: string[]): string {
+  if (messages.length === 0) return "| (none) | 0 |";
+  const counts = new Map<string, number>();
+  for (const message of messages) {
+    const kind = /RESOURCE_EXHAUSTED|429/.test(message)
+      ? "provider rate limit"
+      : /GEMINI_API_KEY|API key|PERMISSION_DENIED|401|403/.test(message)
+        ? "authentication or configuration"
+        : "other";
+    counts.set(kind, (counts.get(kind) ?? 0) + 1);
+  }
+  return [...counts]
+    .sort((a, b) => b[1] - a[1])
+    .map(([kind, count]) => `| ${kind} | ${count} |`)
+    .join("\n");
+}
+
+function gib(bytes: number): string {
+  return (bytes / 1024 ** 3).toFixed(1);
+}
+
+function main(): void {
+  const tierA = readResult<TierAResult>("tier-a.json", "bench/results/tier-a.json not found. Run `npm run bench` first.");
+  const tierB = readResult<TierBResult>("live.json", "bench/results/live.json not found. Run `npm run bench:live` first.");
+  const tierC = readResult<TierCResult>("tier-c.json", "bench/results/tier-c.json not found. Run `npm run bench` first.");
+  const corpus = readCorpusInfo();
+
+  const env = tierA.environment;
+  const packageRows = Object.entries(env.packages)
+    .map(([name, version]) => `| ${name} | ${version} |`)
+    .join("\n");
+
+  const tierARow = `| ${tierA.stats.n} | ${fmt(tierA.stats.min)} | ${fmt(tierA.stats.p50)} | ${fmt(tierA.stats.p95)} | ${fmt(tierA.stats.p99)} | ${fmt(tierA.stats.max)} | ${fmt(tierA.stats.mean)} | ${fmt(tierA.opsPerSecond)} |`;
+
+  const tierCLevelRows = tierC.levels
+    .map(
+      (level) =>
+        `| ${level.concurrency} | ${level.requests} | ${level.errors} | ${fmt(level.stats.min)} | ${fmt(level.stats.p50)} | ${fmt(level.stats.p95)} | ${fmt(level.stats.p99)} | ${fmt(level.stats.max)} | ${fmt(level.stats.mean)} | ${fmt(level.requestsPerSecond)} |`,
+    )
+    .join("\n");
+
+  const embedRawRows = tierB.embed.raw.map((ms, i) => `| ${i + 1} | ${fmt(ms)} |`).join("\n");
+  const generateRawRows = tierB.generate.raw.map((ms, i) => `| ${i + 1} | ${fmt(ms)} |`).join("\n");
+  // Provider error text is never rendered into this committed file. A failure
+  // message can carry a request URL, a project identifier, or a credential,
+  // and this document goes into git. Only the classification and the count are
+  // safe to publish; the verbatim messages stay in the gitignored
+  // bench/results/live.json for local debugging.
+  const embedFailureRows = summarizeFailures(tierB.failures.embed);
+  const generateFailureRows = summarizeFailures(tierB.failures.generate);
+
+  const perMinute = fmt(tierC.rateLimiter.maxRequestsPerWindow / (tierC.rateLimiter.windowSeconds / 60), 1);
+  const secondsPerRequest = fmt(tierC.rateLimiter.windowSeconds / tierC.rateLimiter.maxRequestsPerWindow, 1);
+
+  const content = `# FIVE Concierge Benchmarks
+
+Generated by \`npm run bench:report\` from real measured runs under \`bench/results/\`. Every figure here was measured, not estimated: a number that was not measured is stated as not measured, never rounded up or filled in.
+
+## Hardware and environment
+
+Captured during the Tier A run.
+
+- OS: ${env.os.platform} ${env.os.release} (${env.os.arch})
+- CPU: ${env.cpu.model}, ${env.cpu.cores} logical cores
+- Memory: ${gib(env.memoryBytes)} GiB
+- Node: ${env.node}
+- npm: ${env.npm}
+
+Package versions (exact, as resolved in node_modules):
+
+| Package | Version |
+| --- | --- |
+${packageRows}
+
+## Corpus
+
+Read live from \`data/embeddings.json\` at report generation time, not hardcoded.
+
+- Chunks: ${corpus.chunkCount}
+- Vector dimensionality: ${corpus.dimensions}
+- Embedding model recorded in the store: ${corpus.model}
+- Store built at: ${corpus.createdAt}
+
+## Models
+
+Read live from \`lib/gemini.ts\`.
+
+- Chat model: \`${CHAT_MODEL}\`
+- Embedding model: \`${EMBEDDING_MODEL}\`
+
+## Tier A: retrieval scoring (offline, zero Google API calls)
+
+${tierA.description}
+
+Measured ${tierA.measuredAt}. Iterations: ${tierA.config.iterations}, warmup: ${tierA.config.warmup} (warmup excluded from the numbers below).
+
+| n | min (ms) | p50 (ms) | p95 (ms) | p99 (ms) | max (ms) | mean (ms) | ops/sec |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+${tierARow}
+
+## Tier B: live calibration (the only tier that calls Google)
+
+${tierB.description}
+
+Measured ${tierB.measuredAt}. Sample size n = ${tierB.config.samples}, pause between calls = ${tierB.config.pauseMs} ms.
+
+This tier reports min, max, median and mean only. No percentile statistics apply at this sample size: at n = ${tierB.config.samples}, a p95 is just the second-slowest sample and a p99 is the maximum wearing a costume.
+
+### Embedding calls (\`embedContent\`, model \`${tierB.config.embeddingModel}\`)
+
+| n | min (ms) | max (ms) | median (ms) | mean (ms) |
+| --- | --- | --- | --- | --- |
+| ${tierB.embed.n} | ${fmt(tierB.embed.min)} | ${fmt(tierB.embed.max)} | ${fmt(tierB.embed.median)} | ${fmt(tierB.embed.mean)} |
+
+Raw samples (ms), in call order:
+
+| # | latency (ms) |
+| --- | --- |
+${embedRawRows}
+
+Failures (excluded from the statistics above):
+
+| failure category | count |
+| --- | --- |
+${embedFailureRows}
+
+### Generation calls (\`generateContent\`, model \`${tierB.config.chatModel}\`)
+
+| n | min (ms) | max (ms) | median (ms) | mean (ms) |
+| --- | --- | --- | --- | --- |
+| ${tierB.generate.n} | ${fmt(tierB.generate.min)} | ${fmt(tierB.generate.max)} | ${fmt(tierB.generate.median)} | ${fmt(tierB.generate.mean)} |
+
+Raw samples (ms), in call order:
+
+| # | latency (ms) |
+| --- | --- |
+${generateRawRows}
+
+Failures (excluded from the statistics above):
+
+| failure category | count |
+| --- | --- |
+${generateFailureRows}
+
+### Google API calls made by this run
+
+- Embedding calls attempted: ${tierB.apiCalls.embedAttempted}
+- Generation calls attempted: ${tierB.apiCalls.generateAttempted}
+- Total Google API calls: ${tierB.apiCalls.total}
+- Failed calls (excluded from the latency numbers above): ${tierB.apiCalls.failed}
+
+This counts only the run that produced the numbers above. Earlier calibration
+runs that were discarded, for example one abandoned after provider throttling
+revealed the pause between calls was too short, are not included in this total
+and are not reflected in any figure in this document.
+
+## Tier C: concurrency and throughput (offline, zero Google API calls)
+
+${tierC.description}
+
+Measured ${tierC.measuredAt}. Concurrency levels: ${tierC.config.concurrencyLevels.join(", ")}. Requests per level: ${tierC.config.requestsPerLevel}.
+
+Calibration source: \`${tierC.calibration.sourceFile}\` (embed median ${fmt(tierC.calibration.embedMedianMs)} ms, generate median ${fmt(tierC.calibration.generateMedianMs)} ms, both from the Tier B run above).
+
+Measurement notes:
+
+${tierC.measurementNotes.map((n) => `- ${n}`).join("\n")}
+
+| concurrency | requests | errors | min (ms) | p50 (ms) | p95 (ms) | p99 (ms) | max (ms) | mean (ms) | req/sec |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+${tierCLevelRows}
+
+### Rate limiter: policy ceiling, not measured capacity
+
+The production rate limiter (\`lib/rate-limit.ts\`) allows ${tierC.rateLimiter.maxRequestsPerWindow} requests per ${tierC.rateLimiter.windowSeconds} seconds, per IP. That is ${perMinute} requests per minute per IP, or one request roughly every ${secondsPerRequest} seconds sustained, per IP.
+
+${tierC.rateLimiter.note}
+`;
+
+  const outputPath = path.join(process.cwd(), "docs", "BENCHMARKS.md");
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  fs.writeFileSync(outputPath, content, "utf8");
+  console.log(`Wrote ${outputPath}`);
+}
+
+main();
