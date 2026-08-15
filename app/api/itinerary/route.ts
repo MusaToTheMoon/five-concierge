@@ -136,9 +136,15 @@ export async function POST(request: Request) {
   let chunkCount: number | undefined;
 
   try {
+    // Record time spent even if gatherContext() throws, so the error log line
+    // still carries retrieval timing.
     const retrievalStart = performance.now();
-    const chunks = await gatherContext(prefs);
-    retrievalMs = performance.now() - retrievalStart;
+    let chunks: ScoredChunk[];
+    try {
+      chunks = await gatherContext(prefs);
+    } finally {
+      retrievalMs = performance.now() - retrievalStart;
+    }
     chunkCount = chunks.length;
 
     if (chunks.length === 0) {

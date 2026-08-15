@@ -270,6 +270,29 @@ describe("POST /api/chat", () => {
     expect(line).not.toHaveProperty("generationMs");
   });
 
+  it("returns 500 when retrieval itself rejects, and still logs retrievalMs", async () => {
+    embedTextsMock.mockRejectedValue(new Error("embedding provider unreachable"));
+    const { POST } = await import("@/app/api/chat/route");
+
+    const response = await POST(
+      chatRequest({ messages: [{ role: "user", content: "Tell me about FIVE Palm Jumeirah" }] }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(body.error).toBe("Something went wrong at the desk. Please try that once more.");
+
+    const line = loggedRequest();
+    expect(line.outcome).toBe("error");
+    expect(line.status).toBe(500);
+    expect(line.errorKind).toBe("unknown");
+    // Retrieval never returned a chunk list, so there is no count to report,
+    // but the time spent in retrieval before it threw is still known.
+    expect(typeof line.retrievalMs).toBe("number");
+    expect(line).not.toHaveProperty("chunks");
+    expect(line).not.toHaveProperty("generationMs");
+  });
+
   it("never logs guest-supplied question or reply text", async () => {
     const distinctiveQuestion = "zzTOPSECRETzz what is the wifi password at FIVE Palm Jumeirah";
     const distinctiveReply = "zzREPLYSECRETzz here is a grounded answer";

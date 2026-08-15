@@ -91,9 +91,15 @@ export async function POST(request: Request) {
         ? `${previous.content}\n${last.content}`
         : last.content;
 
+    // Record time spent even if retrieve() throws, so the error log line
+    // still carries retrieval timing.
     const retrievalStart = performance.now();
-    const chunks = await retrieve(query);
-    retrievalMs = performance.now() - retrievalStart;
+    let chunks: Awaited<ReturnType<typeof retrieve>>;
+    try {
+      chunks = await retrieve(query);
+    } finally {
+      retrievalMs = performance.now() - retrievalStart;
+    }
     chunkCount = chunks.length;
 
     if (chunks.length === 0) {

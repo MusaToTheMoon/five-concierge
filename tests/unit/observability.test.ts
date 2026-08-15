@@ -65,6 +65,34 @@ describe("lib/observability", () => {
       ]);
     });
 
+    it("emits keys in the documented order when all four optional fields are present", () => {
+      logRequest({
+        requestId: "req-1",
+        route: "chat",
+        outcome: "error",
+        status: 500,
+        durationMs: 12.4,
+        retrievalMs: 3.2,
+        generationMs: 8.9,
+        chunks: 5,
+        errorKind: "unknown",
+      });
+
+      expect(Object.keys(loggedLine())).toEqual([
+        "level",
+        "event",
+        "requestId",
+        "route",
+        "outcome",
+        "status",
+        "durationMs",
+        "retrievalMs",
+        "generationMs",
+        "chunks",
+        "errorKind",
+      ]);
+    });
+
     it("places errorKind last when present", () => {
       logRequest({
         requestId: "req-1",
