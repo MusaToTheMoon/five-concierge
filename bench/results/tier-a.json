@@ -1,0 +1,50 @@
+{
+  "tier": "A",
+  "description": "Retrieval scoring only: dot products over the real embedding store, threshold filter, sort, slice. The Gemini embedding call is mocked to return a cached query vector synchronously; everything after that (lib/retrieval.ts's retrieve()) runs for real against the real data/embeddings.json store.",
+  "measuredAt": "2026-08-15T07:25:28.412Z",
+  "touchedGoogleApi": false,
+  "apiCalls": 0,
+  "environment": {
+    "capturedAt": "2026-08-15T07:25:28.413Z",
+    "node": "v23.11.0",
+    "npm": "10.9.2",
+    "os": {
+      "platform": "darwin",
+      "release": "24.6.0",
+      "arch": "arm64"
+    },
+    "cpu": {
+      "model": "Apple M4",
+      "cores": 10
+    },
+    "memoryBytes": 17179869184,
+    "packages": {
+      "@google/genai": "2.10.0",
+      "@upstash/ratelimit": "v2.0.8",
+      "@upstash/redis": "1.38.0",
+      "@vercel/functions": "3.7.6",
+      "next": "16.2.10",
+      "vitest": "3.2.7"
+    }
+  },
+  "corpus": {
+    "model": "gemini-embedding-001",
+    "dimensions": 768,
+    "chunkCount": 25,
+    "createdAt": "2026-07-14T22:25:17.329Z"
+  },
+  "config": {
+    "iterations": 10000,
+    "warmup": 500
+  },
+  "stats": {
+    "n": 10000,
+    "min": 0.012332999999955518,
+    "max": 1.3498749999999973,
+    "mean": 0.013412399800000136,
+    "p50": 0.01258300000000645,
+    "p95": 0.014625000000023647,
+    "p99": 0.017833999999993466
+  },
+  "opsPerSecond": 74337.00682042039
+}

@@ -1,0 +1,126 @@
+{
+  "tier": "C",
+  "description": "Concurrency and throughput against the real POST /api/chat handler and the real embedding store. Gemini is stubbed to resolve after Tier B's measured median embed and generate latencies; the rate limiter and Redis client are mocked, with a distinct IP per virtual user so the per-IP limiter is not what is measured.",
+  "measuredAt": "2026-08-15T07:34:06.334Z",
+  "touchedGoogleApi": false,
+  "apiCalls": 0,
+  "environment": {
+    "capturedAt": "2026-08-15T07:34:06.340Z",
+    "node": "v23.11.0",
+    "npm": "10.9.2",
+    "os": {
+      "platform": "darwin",
+      "release": "24.6.0",
+      "arch": "arm64"
+    },
+    "cpu": {
+      "model": "Apple M4",
+      "cores": 10
+    },
+    "memoryBytes": 17179869184,
+    "packages": {
+      "@google/genai": "2.10.0",
+      "@upstash/ratelimit": "v2.0.8",
+      "@upstash/redis": "1.38.0",
+      "@vercel/functions": "3.7.6",
+      "next": "16.2.10",
+      "vitest": "3.2.7"
+    }
+  },
+  "corpus": {
+    "model": "gemini-embedding-001",
+    "dimensions": 768,
+    "chunkCount": 25,
+    "createdAt": "2026-07-14T22:25:17.329Z"
+  },
+  "calibration": {
+    "sourceFile": "bench/results/live.json",
+    "embedMedianMs": 770.28,
+    "generateMedianMs": 1266.8
+  },
+  "rateLimiter": {
+    "windowSeconds": 60,
+    "maxRequestsPerWindow": 10,
+    "note": "This is a stated policy ceiling from lib/rate-limit.ts, not a measured throughput number. The limiter is mocked to always allow in this tier, and each virtual user gets its own IP, so the per-IP limiter is never the thing under test here."
+  },
+  "measurementNotes": [
+    "console.log was stubbed for the duration of this run to silence the per-request observability logging. Each request emits a JSON line; thousands of JSON.stringify calls plus stdout writes are real I/O that would skew the numbers being measured here.",
+    "The Gemini stub resolves after a FIXED delay, so it contributes no variance of its own. The spread between p50 and p99 below therefore describes this application's own jitter under load, not the provider's. Real end to end percentiles against live Gemini would be materially wider, because provider latency varies run to run: the same embedding call measured a 385 ms median in one calibration run and 770 ms in another on the same machine.",
+    "Latency here is dominated by the stub. Subtract the calibration total to read the application's own contribution: anything above the combined embed plus generate median is what this codebase added."
+  ],
+  "config": {
+    "concurrencyLevels": [
+      1,
+      5,
+      20,
+      50
+    ],
+    "requestsPerLevel": 200
+  },
+  "levels": [
+    {
+      "concurrency": 1,
+      "requests": 200,
+      "errors": 0,
+      "wallMs": 407933.466,
+      "stats": {
+        "n": 200,
+        "min": 2037.4089580000145,
+        "max": 2050.641499999998,
+        "mean": 2039.664263574999,
+        "p50": 2039.545708500009,
+        "p95": 2041.04941665,
+        "p99": 2047.8279209200002
+      },
+      "requestsPerSecond": 0.4902760294738848
+    },
+    {
+      "concurrency": 5,
+      "requests": 200,
+      "errors": 0,
+      "wallMs": 81567.86325000005,
+      "stats": {
+        "n": 200,
+        "min": 2037.0493340000394,
+        "max": 2042.3707500000019,
+        "mean": 2039.1845712399975,
+        "p50": 2039.135812499997,
+        "p95": 2040.576608649976,
+        "p99": 2041.9686546700227
+      },
+      "requestsPerSecond": 2.451946048739972
+    },
+    {
+      "concurrency": 20,
+      "requests": 200,
+      "errors": 0,
+      "wallMs": 20392.385749999958,
+      "stats": {
+        "n": 200,
+        "min": 2036.3761250000098,
+        "max": 2042.4153750000405,
+        "mean": 2039.129884545,
+        "p50": 2038.9257290000096,
+        "p95": 2042.108225599985,
+        "p99": 2042.2994533299789
+      },
+      "requestsPerSecond": 9.807582224654633
+    },
+    {
+      "concurrency": 50,
+      "requests": 200,
+      "errors": 0,
+      "wallMs": 8164.638709000021,
+      "stats": {
+        "n": 200,
+        "min": 2035.9771249999758,
+        "max": 2044.3004169999622,
+        "mean": 2039.3803072699984,
+        "p50": 2038.8673540000163,
+        "p95": 2043.9442631500335,
+        "p99": 2044.0071495800184
+      },
+      "requestsPerSecond": 24.495878767977395
+    }
+  ]
+}

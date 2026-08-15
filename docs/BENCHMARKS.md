@@ -43,11 +43,11 @@ Read live from `lib/gemini.ts`.
 
 Retrieval scoring only: dot products over the real embedding store, threshold filter, sort, slice. The Gemini embedding call is mocked to return a cached query vector synchronously; everything after that (lib/retrieval.ts's retrieve()) runs for real against the real data/embeddings.json store.
 
-Measured 2026-08-15T06:42:13.379Z. Iterations: 10000, warmup: 500 (warmup excluded from the numbers below).
+Measured 2026-08-15T07:25:28.412Z. Iterations: 10000, warmup: 500 (warmup excluded from the numbers below).
 
 | n | min (ms) | p50 (ms) | p95 (ms) | p99 (ms) | max (ms) | mean (ms) | ops/sec |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 10000 | 0.01 | 0.01 | 0.01 | 0.02 | 0.78 | 0.01 | 75374.09 |
+| 10000 | 0.01 | 0.01 | 0.01 | 0.02 | 1.35 | 0.01 | 74337.01 |
 
 ## Tier B: live calibration (the only tier that calls Google)
 
@@ -143,7 +143,7 @@ and are not reflected in any figure in this document.
 
 Concurrency and throughput against the real POST /api/chat handler and the real embedding store. Gemini is stubbed to resolve after Tier B's measured median embed and generate latencies; the rate limiter and Redis client are mocked, with a distinct IP per virtual user so the per-IP limiter is not what is measured.
 
-Measured 2026-08-15T06:50:51.297Z. Concurrency levels: 1, 5, 20, 50. Requests per level: 200.
+Measured 2026-08-15T07:34:06.334Z. Concurrency levels: 1, 5, 20, 50. Requests per level: 200.
 
 Calibration source: `bench/results/live.json` (embed median 770.28 ms, generate median 1266.80 ms, both from the Tier B run above).
 
@@ -155,10 +155,10 @@ Measurement notes:
 
 | concurrency | requests | errors | min (ms) | p50 (ms) | p95 (ms) | p99 (ms) | max (ms) | mean (ms) | req/sec |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | 200 | 0 | 2036.84 | 2039.46 | 2040.38 | 2041.15 | 2048.98 | 2039.36 | 0.49 |
-| 5 | 200 | 0 | 2036.41 | 2039.38 | 2040.54 | 2041.03 | 2041.78 | 2039.21 | 2.45 |
-| 20 | 200 | 0 | 2036.76 | 2039.31 | 2043.32 | 2044.57 | 2044.65 | 2039.68 | 9.80 |
-| 50 | 200 | 0 | 2036.34 | 2039.10 | 2046.46 | 2046.88 | 2046.99 | 2040.21 | 24.49 |
+| 1 | 200 | 0 | 2037.41 | 2039.55 | 2041.05 | 2047.83 | 2050.64 | 2039.66 | 0.49 |
+| 5 | 200 | 0 | 2037.05 | 2039.14 | 2040.58 | 2041.97 | 2042.37 | 2039.18 | 2.45 |
+| 20 | 200 | 0 | 2036.38 | 2038.93 | 2042.11 | 2042.30 | 2042.42 | 2039.13 | 9.81 |
+| 50 | 200 | 0 | 2035.98 | 2038.87 | 2043.94 | 2044.01 | 2044.30 | 2039.38 | 24.50 |
 
 ### Rate limiter: policy ceiling, not measured capacity
 
