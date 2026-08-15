@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { Type } from "@google/genai";
-import { handleGeminiError } from "@/lib/api-errors";
+import { classifyError, handleGeminiError } from "@/lib/api-errors";
 import { CHAT_MODEL, getGemini } from "@/lib/gemini";
+import { logRequest, newRequestId, withRequestId } from "@/lib/observability";
 import { clientIp, isRateLimited, rateLimitedResponse } from "@/lib/rate-limit";
 import { formatContext, retrieve, toSources } from "@/lib/retrieval";
 import type { ChatMessage } from "@/lib/types";
@@ -33,7 +34,19 @@ const NO_INFO_REPLY =
   "That's not something I have reliable information on, I'm afraid, and I'd rather not guess. For the definitive answer, check fivehotelsandresorts.com or reach out to the property team directly; they'll take care of you.";
 
 export async function POST(request: Request) {
-  if (await isRateLimited(`chat:${clientIp(request)}`)) return rateLimitedResponse();
+  const requestId = newRequestId();
+  const start = performance.now();
+
+  if (await isRateLimited(`chat:${clientIp(request)}`)) {
+    logRequest({
+      requestId,
+      route: "chat",
+      outcome: "rate_limited",
+      status: 429,
+      durationMs: performance.now() - start,
+    });
+    return withRequestId(rateLimitedResponse(), requestId);
+  }
 
   let messages: ChatMessage[];
   try {
@@ -41,14 +54,32 @@ export async function POST(request: Request) {
     messages = body?.messages;
     if (!Array.isArray(messages) || messages.length === 0) throw new Error();
   } catch {
-    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+    logRequest({
+      requestId,
+      route: "chat",
+      outcome: "bad_request",
+      status: 400,
+      durationMs: performance.now() - start,
+    });
+    return withRequestId(NextResponse.json({ error: "Invalid request." }, { status: 400 }), requestId);
   }
 
   const history = messages.slice(-HISTORY_LIMIT);
   const last = history[history.length - 1];
   if (last?.role !== "user" || typeof last.content !== "string") {
-    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+    logRequest({
+      requestId,
+      route: "chat",
+      outcome: "bad_request",
+      status: 400,
+      durationMs: performance.now() - start,
+    });
+    return withRequestId(NextResponse.json({ error: "Invalid request." }, { status: 400 }), requestId);
   }
+
+  let retrievalMs: number | undefined;
+  let generationMs: number | undefined;
+  let chunkCount: number | undefined;
 
   try {
     // Short follow-ups ("what about Zurich?") retrieve badly on their own,
@@ -60,9 +91,23 @@ export async function POST(request: Request) {
         ? `${previous.content}\n${last.content}`
         : last.content;
 
+    const retrievalStart = performance.now();
     const chunks = await retrieve(query);
+    retrievalMs = performance.now() - retrievalStart;
+    chunkCount = chunks.length;
+
     if (chunks.length === 0) {
-      return NextResponse.json({ reply: NO_INFO_REPLY, sources: [] });
+      const response = NextResponse.json({ reply: NO_INFO_REPLY, sources: [] });
+      logRequest({
+        requestId,
+        route: "chat",
+        outcome: "no_context",
+        status: 200,
+        durationMs: performance.now() - start,
+        retrievalMs,
+        chunks: chunkCount,
+      });
+      return withRequestId(response, requestId);
     }
 
     const contents = history.map((message, i) => ({
@@ -77,7 +122,8 @@ export async function POST(request: Request) {
       ],
     }));
 
-    const response = await getGemini().models.generateContent({
+    const generationStart = performance.now();
+    const geminiResponse = await getGemini().models.generateContent({
       model: CHAT_MODEL,
       contents,
       config: {
@@ -97,8 +143,9 @@ export async function POST(request: Request) {
         },
       },
     });
+    generationMs = performance.now() - generationStart;
 
-    const parsed = JSON.parse(response.text ?? "") as {
+    const parsed = JSON.parse(geminiResponse.text ?? "") as {
       reply: string;
       grounded: boolean;
     };
@@ -106,11 +153,34 @@ export async function POST(request: Request) {
     if (!reply) throw new Error("Empty model response");
     // Only cite sources when the model actually answered from them; a refusal
     // or off-topic steer shouldn't carry source chips.
-    return NextResponse.json({
+    const response = NextResponse.json({
       reply,
       sources: parsed.grounded ? toSources(chunks) : [],
     });
+    logRequest({
+      requestId,
+      route: "chat",
+      outcome: "ok",
+      status: 200,
+      durationMs: performance.now() - start,
+      retrievalMs,
+      generationMs,
+      chunks: chunkCount,
+    });
+    return withRequestId(response, requestId);
   } catch (error) {
-    return handleGeminiError(error);
+    const response = handleGeminiError(error);
+    logRequest({
+      requestId,
+      route: "chat",
+      outcome: "error",
+      status: response.status,
+      durationMs: performance.now() - start,
+      retrievalMs,
+      generationMs,
+      chunks: chunkCount,
+      errorKind: classifyError(error),
+    });
+    return withRequestId(response, requestId);
   }
 }
