@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fixtureFsMock, ORTHOGONAL_QUERY_VECTOR, QUERY_VECTOR } from "../fixtures/embeddings";
 
 /**
@@ -54,12 +54,28 @@ function geminiReply(reply: string, grounded: boolean) {
   return { text: JSON.stringify({ reply, grounded }) };
 }
 
+let consoleLogSpy: ReturnType<typeof vi.spyOn>;
+
+/** Parses the single request_complete line logged for the request. */
+function loggedRequest(): Record<string, unknown> {
+  const lines = consoleLogSpy.mock.calls
+    .map((call) => call[0] as string)
+    .filter((line) => typeof line === "string");
+  expect(lines).toHaveLength(1);
+  return JSON.parse(lines[0]);
+}
+
 beforeEach(() => {
   embedTextsMock.mockReset();
   generateContentMock.mockReset();
   limitMock.mockReset();
   embedTextsMock.mockImplementation(async () => [QUERY_VECTOR]);
   limitMock.mockResolvedValue({ success: true });
+  consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+});
+
+afterEach(() => {
+  consoleLogSpy.mockRestore();
 });
 
 describe("POST /api/chat", () => {
@@ -84,6 +100,15 @@ describe("POST /api/chat", () => {
       { title: "Nightlife at FIVE", url: "https://fivehotelsandresorts.com/nightlife" },
     ]);
     expect(limitMock).toHaveBeenCalledWith("chat:1.2.3.4");
+    expect(response.headers.get("x-request-id")).toEqual(expect.any(String));
+
+    const line = loggedRequest();
+    expect(line.outcome).toBe("ok");
+    expect(line.status).toBe(200);
+    expect(line.level).toBe("info");
+    expect(line.chunks).toBe(6);
+    expect(typeof line.retrievalMs).toBe("number");
+    expect(typeof line.generationMs).toBe("number");
   });
 
   it("declines with the no-info reply and empty sources when nothing is retrieved, without calling Gemini", async () => {
@@ -99,6 +124,13 @@ describe("POST /api/chat", () => {
     expect(body.reply).toBe(NO_INFO_REPLY);
     expect(body.sources).toEqual([]);
     expect(generateContentMock).not.toHaveBeenCalled();
+
+    const line = loggedRequest();
+    expect(line.outcome).toBe("no_context");
+    expect(line.status).toBe(200);
+    expect(line.chunks).toBe(0);
+    expect(typeof line.retrievalMs).toBe("number");
+    expect(line).not.toHaveProperty("generationMs");
   });
 
   it("returns the model's decline and empty sources when the model declines to ground, even though chunks were retrieved", async () => {
@@ -147,6 +179,13 @@ describe("POST /api/chat", () => {
 
     expect(response.status).toBe(400);
     expect(body.error).toBe("Invalid request.");
+
+    const line = loggedRequest();
+    expect(line.outcome).toBe("bad_request");
+    expect(line.status).toBe(400);
+    expect(line).not.toHaveProperty("retrievalMs");
+    expect(line).not.toHaveProperty("generationMs");
+    expect(line).not.toHaveProperty("chunks");
   });
 
   it("returns 400 when messages is an empty array", async () => {
@@ -157,6 +196,10 @@ describe("POST /api/chat", () => {
 
     expect(response.status).toBe(400);
     expect(body.error).toBe("Invalid request.");
+
+    const line = loggedRequest();
+    expect(line.outcome).toBe("bad_request");
+    expect(line.status).toBe(400);
   });
 
   it("returns 400 when the final message's role is not user", async () => {
@@ -174,6 +217,13 @@ describe("POST /api/chat", () => {
 
     expect(response.status).toBe(400);
     expect(body.error).toBe("Invalid request.");
+
+    const line = loggedRequest();
+    expect(line.outcome).toBe("bad_request");
+    expect(line.status).toBe(400);
+    expect(line).not.toHaveProperty("retrievalMs");
+    expect(line).not.toHaveProperty("generationMs");
+    expect(line).not.toHaveProperty("chunks");
   });
 
   it("returns 429 when the rate limiter reports the caller is limited, without calling Gemini", async () => {
@@ -186,6 +236,14 @@ describe("POST /api/chat", () => {
 
     expect(response.status).toBe(429);
     expect(generateContentMock).not.toHaveBeenCalled();
+    expect(response.headers.get("x-request-id")).toEqual(expect.any(String));
+
+    const line = loggedRequest();
+    expect(line.outcome).toBe("rate_limited");
+    expect(line.status).toBe(429);
+    expect(line).not.toHaveProperty("retrievalMs");
+    expect(line).not.toHaveProperty("generationMs");
+    expect(line).not.toHaveProperty("chunks");
   });
 
   it("returns 500 when the model call rejects", async () => {
@@ -199,5 +257,54 @@ describe("POST /api/chat", () => {
 
     expect(response.status).toBe(500);
     expect(body.error).toBe("Something went wrong at the desk. Please try that once more.");
+
+    const line = loggedRequest();
+    expect(line.outcome).toBe("error");
+    expect(line.status).toBe(500);
+    expect(line.level).toBe("error");
+    expect(line.errorKind).toBe("unknown");
+    // Retrieval completed before the model call rejected, so its chunk count
+    // and duration are known, but generation never finished.
+    expect(line.chunks).toBe(6);
+    expect(typeof line.retrievalMs).toBe("number");
+    expect(line).not.toHaveProperty("generationMs");
+  });
+
+  it("returns 500 when retrieval itself rejects, and still logs retrievalMs", async () => {
+    embedTextsMock.mockRejectedValue(new Error("embedding provider unreachable"));
+    const { POST } = await import("@/app/api/chat/route");
+
+    const response = await POST(
+      chatRequest({ messages: [{ role: "user", content: "Tell me about FIVE Palm Jumeirah" }] }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(body.error).toBe("Something went wrong at the desk. Please try that once more.");
+
+    const line = loggedRequest();
+    expect(line.outcome).toBe("error");
+    expect(line.status).toBe(500);
+    expect(line.errorKind).toBe("unknown");
+    // Retrieval never returned a chunk list, so there is no count to report,
+    // but the time spent in retrieval before it threw is still known.
+    expect(typeof line.retrievalMs).toBe("number");
+    expect(line).not.toHaveProperty("chunks");
+    expect(line).not.toHaveProperty("generationMs");
+  });
+
+  it("never logs guest-supplied question or reply text", async () => {
+    const distinctiveQuestion = "zzTOPSECRETzz what is the wifi password at FIVE Palm Jumeirah";
+    const distinctiveReply = "zzREPLYSECRETzz here is a grounded answer";
+    generateContentMock.mockResolvedValue(geminiReply(distinctiveReply, true));
+    const { POST } = await import("@/app/api/chat/route");
+
+    await POST(chatRequest({ messages: [{ role: "user", content: distinctiveQuestion }] }));
+
+    const loggedText = consoleLogSpy.mock.calls.map((call) => call[0]).join("\n");
+    expect(loggedText).not.toContain(distinctiveQuestion);
+    expect(loggedText).not.toContain(distinctiveReply);
+    expect(loggedText).not.toContain("zzTOPSECRETzz");
+    expect(loggedText).not.toContain("zzREPLYSECRETzz");
   });
 });

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { Type } from "@google/genai";
-import { handleGeminiError } from "@/lib/api-errors";
+import { classifyError, handleGeminiError } from "@/lib/api-errors";
 import { CHAT_MODEL, getGemini } from "@/lib/gemini";
+import { logRequest, newRequestId, withRequestId } from "@/lib/observability";
 import { clientIp, isRateLimited, rateLimitedResponse } from "@/lib/rate-limit";
 import { formatContext, retrieve, toSources, type ScoredChunk } from "@/lib/retrieval";
 import type { Itinerary, ItineraryStop } from "@/lib/types";
@@ -99,7 +100,19 @@ async function gatherContext(prefs: Preferences): Promise<ScoredChunk[]> {
 }
 
 export async function POST(request: Request) {
-  if (await isRateLimited(`itinerary:${clientIp(request)}`)) return rateLimitedResponse();
+  const requestId = newRequestId();
+  const start = performance.now();
+
+  if (await isRateLimited(`itinerary:${clientIp(request)}`)) {
+    logRequest({
+      requestId,
+      route: "itinerary",
+      outcome: "rate_limited",
+      status: 429,
+      durationMs: performance.now() - start,
+    });
+    return withRequestId(rateLimitedResponse(), requestId);
+  }
 
   let prefs: Preferences | null = null;
   try {
@@ -108,21 +121,53 @@ export async function POST(request: Request) {
     /* falls through to the 400 below */
   }
   if (!prefs) {
-    return NextResponse.json({ error: "Invalid preferences." }, { status: 400 });
+    logRequest({
+      requestId,
+      route: "itinerary",
+      outcome: "bad_request",
+      status: 400,
+      durationMs: performance.now() - start,
+    });
+    return withRequestId(NextResponse.json({ error: "Invalid preferences." }, { status: 400 }), requestId);
   }
 
+  let retrievalMs: number | undefined;
+  let generationMs: number | undefined;
+  let chunkCount: number | undefined;
+
   try {
-    const chunks = await gatherContext(prefs);
+    // Record time spent even if gatherContext() throws, so the error log line
+    // still carries retrieval timing.
+    const retrievalStart = performance.now();
+    let chunks: ScoredChunk[];
+    try {
+      chunks = await gatherContext(prefs);
+    } finally {
+      retrievalMs = performance.now() - retrievalStart;
+    }
+    chunkCount = chunks.length;
+
     if (chunks.length === 0) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: "I couldn't find grounded venues for that combination. Try different preferences." },
         { status: 422 },
       );
+      logRequest({
+        requestId,
+        route: "itinerary",
+        outcome: "no_context",
+        status: 422,
+        durationMs: performance.now() - start,
+        retrievalMs,
+        chunks: chunkCount,
+      });
+      return withRequestId(response, requestId);
     }
 
     const prompt = `CONTEXT:\n${formatContext(chunks)}\n\nGUEST PREFERENCES:\n- Destination: ${prefs.destination}\n- Vibe: ${prefs.vibe}\n- Group: ${prefs.group}\n- Interests: ${prefs.interests.join(", ")}\n\nCurate the itinerary now.`;
 
-    const response = await getGemini().models.generateContent({
+    const generationStart = performance.now();
+    const geminiResponse = await getGemini().models.generateContent({
       model: CHAT_MODEL,
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       config: {
@@ -133,8 +178,9 @@ export async function POST(request: Request) {
         responseSchema: RESPONSE_SCHEMA,
       },
     });
+    generationMs = performance.now() - generationStart;
 
-    const raw = JSON.parse(response.text ?? "") as {
+    const raw = JSON.parse(geminiResponse.text ?? "") as {
       title: string;
       subtitle: string;
       stops: Array<Omit<ItineraryStop, "source"> & { source_index: number }>;
@@ -155,8 +201,31 @@ export async function POST(request: Request) {
     if (stops.length === 0) throw new Error("Model returned no stops");
 
     const itinerary: Itinerary = { title: raw.title, subtitle: raw.subtitle, stops };
-    return NextResponse.json({ itinerary, sources: toSources(chunks) });
+    const response = NextResponse.json({ itinerary, sources: toSources(chunks) });
+    logRequest({
+      requestId,
+      route: "itinerary",
+      outcome: "ok",
+      status: 200,
+      durationMs: performance.now() - start,
+      retrievalMs,
+      generationMs,
+      chunks: chunkCount,
+    });
+    return withRequestId(response, requestId);
   } catch (error) {
-    return handleGeminiError(error);
+    const response = handleGeminiError(error);
+    logRequest({
+      requestId,
+      route: "itinerary",
+      outcome: "error",
+      status: response.status,
+      durationMs: performance.now() - start,
+      retrievalMs,
+      generationMs,
+      chunks: chunkCount,
+      errorKind: classifyError(error),
+    });
+    return withRequestId(response, requestId);
   }
 }
